@@ -66,13 +66,13 @@ def stationary_test(df, col_ref='Low'):
     return adf_test.should_diff(df[col_ref])[1]
 
 
-# In[5]:
+# In[7]:
 
 
 def get_auto_arima(ticker, period='1y', interval='1d', col_ref='Low'):
     df = get_finance_data(ticker, period, interval)
     is_stat = stationary_test(df)
-    train = df[col_ref][:len(df)-10]
+    train = df[col_ref]
     arima_model = auto_arima(train, start_p=0, d=1, stationary=is_stat, start_q=0, max_p=5, mas_d=5, max_q=5, start_P=0, D=1, 
                              start_Q=1, max_P=5, max_D=5, max_Q=5, m=12, seasonal=True, error_action='warn', trace=True, 
                              suppress_warnings=True, stepwise=True, random_state=20, n_fits=50)
