@@ -27,8 +27,8 @@ warnings.filterwarnings('ignore')
 
 
 def get_finance_data(ticker, period='1y', interval='1d'):
-    google = yf.Ticker(ticker)
-    df = google.history(period=period, interval=interval)
+    tkr = yf.Ticker(ticker)
+    df = tkr.history(period=period, interval=interval)
     return df
 
 
@@ -44,7 +44,7 @@ def get_finance_data(ticker, period='1y', interval='1d'):
 # In[3]:
 
 
-def get_forecast(df, next=1, p=5, d=1, q=0, col_ref='Low'):
+def get_forecast(df, col_ref='Low', next=1, p=5, d=1, q=0):
     y = df[col_ref].values
     model = ARIMA(y, order=(p,d,q)).fit()
     forecast = model.forecast(steps=next)[0]
@@ -81,11 +81,13 @@ def get_auto_arima(ticker, period='1y', interval='1d', col_ref='Low'):
 
 # 
 
-# In[ ]:
-
-
-
-
+# # Exemplo de uso
+# 
+#     my_ticker='HGLG11.SA'
+#     data = get_finance_data(my_ticker)
+#     my_arima = get_auto_arima(my_ticker)
+#     AR,I,MA = my_arima
+#     get_forecast(data, next=10, p=AR,d=I,q=MA)
 
 # In[ ]:
 
