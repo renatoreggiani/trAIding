@@ -34,11 +34,11 @@ def test_unit_root(s):
     adf = adfuller(s)
     return adf[0] > adf[4]['1%']
 
-def stationary_test(df, col_ref='Low'):
+def stationary_test(s):
     adf_test = ADFTest(alpha=0.01)
-    return not adf_test.should_diff(df[col_ref])[1]
+    return not adf_test.should_diff(s)[1]
                            
-def arima_forecast(df, col_ref='Low', next=1, p=5, d=1, q=0):
+def arima_forecast(s, next=1, p=5, d=1, q=0):
     '''
     Função que entrega as próximas previsões utilizando ARIMA
     
@@ -50,10 +50,8 @@ def arima_forecast(df, col_ref='Low', next=1, p=5, d=1, q=0):
     col_ref: Coluna de referência
     '''    
     
-    y = df[col_ref].values
-    
-    if test_unit_root(y):
-        model = ARIMA(y, order=(p,d,q)).fit()
+    if test_unit_root(s):
+        model = ARIMA(s, order=(p,d,q)).fit()
         forecast = model.forecast(steps=next)[0]
         return forecast
     else:
@@ -73,12 +71,10 @@ def arima_forecast(df, col_ref='Low', next=1, p=5, d=1, q=0):
 # In[5]:
 
 
-def get_auto_arima(ticker, period='1y', interval='1d', col_ref='Low'):
-    df = get_finance_data(ticker, period, interval)
-    is_stat = stationary_test(df)
-    train = df[col_ref]
-    if test_unit_root(train):
-        arima_model = auto_arima(train, stationary=is_stat, start_p=0, d=1, start_q=0, max_p=5, max_d=5, max_q=5, start_P=0, D=1, 
+def get_auto_arima(s):
+    is_stat = stationary_test(s)
+    if test_unit_root(s):
+        arima_model = auto_arima(s, stationary=is_stat, start_p=0, d=1, start_q=0, max_p=5, max_d=5, max_q=5, start_P=0, D=1, 
                                  start_Q=1, max_P=5, max_D=5, max_Q=5, m=12, seasonal=True, error_action='warn', trace=True, 
                                  suppress_warnings=True, stepwise=True, random_state=20, n_fits=50, n_jobs=-1)
         return arima_model
