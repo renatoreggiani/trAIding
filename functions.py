@@ -70,16 +70,26 @@ def arima_forecast(s, next=1, p=5, d=1, q=0):
 
 # In[5]:
 
-
 def get_auto_arima(s):
     is_stat = stationary_test(s)
     if test_unit_root(s):
         arima_model = auto_arima(s, stationary=is_stat, start_p=0, d=1, start_q=0, max_p=5, max_d=5, max_q=5, start_P=0, D=1, 
-                                 start_Q=1, max_P=5, max_D=5, max_Q=5, m=12, seasonal=True, error_action='warn', trace=True, 
-                                 suppress_warnings=True, stepwise=True, random_state=20, n_fits=50, n_jobs=-1)
+                                 start_Q=1, max_P=5, max_D=5, max_Q=5, m=12, seasonal=False, error_action='warn', trace=True, 
+                                 suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
         return arima_model
     else:
         print('Serie estacionaria, nao utilizar modelo ARIMA')
+        
+        
+def get_auto_sarima(s):
+    is_stat = stationary_test(s)
+    if test_unit_root(s):
+        arima_model = auto_arima(s, stationary=is_stat, start_p=0, d=1, start_q=0, max_p=5, max_d=5, max_q=5, start_P=0, D=1, 
+                                 start_Q=1, max_P=5, max_D=5, max_Q=5, m=12, seasonal=True, error_action='warn', trace=True, 
+                                 suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
+        return arima_model
+    else:
+        print('Serie estacionaria, nao utilizar modelo SARIMA')
 
 
 
