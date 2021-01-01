@@ -69,7 +69,7 @@ def arima_forecast(s, next=1, p=5, d=1, q=0):
 #     col_ref: default 'Low', Coluna de referência 
 
 # In[5]:
-
+'''
 def get_auto_arima(s):
     is_stat = stationary_test(s)
     if test_unit_root(s):
@@ -90,29 +90,12 @@ def get_auto_sarima(s):
         return arima_model
     else:
         print('Serie estacionaria, nao utilizar modelo SARIMA')
-
-
-
 '''
-import yfinance as yf
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt 
-plt.style.use('fivethirtyeight')
-ticker='HGLG11.SA'
-data = get_finance_data(ticker)
-arima_model = get_auto_arima(ticker)
-train = data['Low'][:len(data)-50]
-test = data['Low'][-50:]
-prd = pd.DataFrame(arima_model.predict(n_periods=50), index=test.index)
-AR,I,MA = arima_model.order
-get_forecast(data, next=50, p=AR,d=I,q=MA)
-plt.figure(figsize=(8,5))
-plt.plot(train, label="treino")
-plt.plot(test, label="teste")
-plt.plot(prd, label="predicao")
-plt.legend(loc='lower right')
-plt.title(label=ticker)
-plt.show
-'''
+def get_arima_model(s):
+    is_stat = stationary_test(s)
+    is_seasonal = test_unit_root(s) 
+    arima_model = auto_arima(s, stationary=is_stat, start_p=0, d=1, start_q=0, max_p=5, max_d=5, max_q=5, start_P=0, D=1, 
+                             start_Q=1, max_P=5, max_D=5, max_Q=5, m=12, seasonal=is_seasonal, error_action='warn', trace=True, 
+                             suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
+    return arima_model
 
