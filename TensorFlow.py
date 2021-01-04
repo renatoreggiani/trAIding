@@ -1,35 +1,37 @@
-import tensorflow as tf
+#!/usr/bin/env python
+# coding: utf-8
+
+# https://www.thepythoncode.com/article/stock-price-prediction-in-python-using-tensorflow-2-and-keras
+
+# ## Requirements
+# 
+#     !pip install requests_html
+#     !pip install wrapt --upgrade --ignore-installed
+#     !pip install tensorflow
+#     !pip3 install pandas numpy matplotlib yahoo_fin sklearn 
+
+# In[1]:
+
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout, Bidirectional
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
-from yahoo_fin import stock_info as si
 from collections import deque
 
 import os
 import numpy as np
 import pandas as pd
-import random
 import matplotlib.pyplot as plt
 
-# from functions import get_finance_data
+from functions import get_finance_data
 
-# set seed, so we can get the same results after rerunning several times
-np.random.seed(314)
-tf.random.set_seed(314)
-random.seed(314)
 
-def shuffle_in_unison(a, b):
-    # shuffle two arrays in the same way
-    state = np.random.get_state()
-    np.random.shuffle(a)
-    np.random.set_state(state)
-    np.random.shuffle(b)
+# In[3]:
 
-#%%
+
 def load_data(df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_date=True,
-                test_size=0.2, feature_columns=['adjclose', 'volume', 'open', 'high', 'low'], target_col='adjclose'):
+                test_size=0.2, feature_columns=['adjclose', 'volume', 'open', 'high', 'low'], target_col='target'):
     """
     Get df scaling, shuffling, normalizing and splitting.
     Params:
@@ -53,14 +55,14 @@ def load_data(df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_
     if scale:
         column_scaler = {}
         # scale the data (prices) from 0 to 1
-        for column in feature_columns:
+        for column in feature_columns + [target_col]:
             scaler = preprocessing.MinMaxScaler()
             df[column] = scaler.fit_transform(np.expand_dims(df[column].values, axis=1))
             column_scaler[column] = scaler
         # add the MinMaxScaler instances to the result returned
         result["column_scaler"] = column_scaler
     # add the target column (label) by shifting by `lookup_step`
-    df['future'] = df['adjclose'].shift(-lookup_step)
+    df['future'] = df[target_col].shift(-lookup_step)
     # last `lookup_step` columns contains NaN in future column
     # get them before droping NaNs
     last_sequence = np.array(df[feature_columns].tail(lookup_step))
@@ -84,22 +86,11 @@ def load_data(df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_
     for seq, target in sequence_data:
         X.append(seq)
         y.append(target)
-    # convert to numpy arrays
     X = np.array(X)
     y = np.array(y)
-    if split_by_date:
-        train_samples = int((1 - test_size) * len(X))
-        result["X_train"] = X[:train_samples]
-        result["y_train"] = y[:train_samples]
-        result["X_test"]  = X[train_samples:]
-        result["y_test"]  = y[train_samples:]
-        if shuffle:
-            # shuffle the datasets for training (if shuffle parameter is set)
-            shuffle_in_unison(result["X_train"], result["y_train"])
-            shuffle_in_unison(result["X_test"], result["y_test"])
-    else:    
-        result["X_train"], result["X_test"], result["y_train"], result["y_test"] = train_test_split(X, y, 
-                                                                                test_size=test_size, shuffle=shuffle)
+
+    result["X_train"], result["X_test"], result["y_train"], result["y_test"] = train_test_split(X, y, random_state=42,
+                                                                                test_size=test_size, shuffle=False)
     # get the list of test set dates
     dates = result["X_test"][:, -1, -1]
     # retrieve test features from the original dataframe
@@ -110,7 +101,8 @@ def load_data(df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_
     return result
 
 
-#%%
+# In[4]:
+
 
 def create_model(sequence_length, n_features, units=256, cell=LSTM, n_layers=2, dropout=0.3,
                 loss="mean_absolute_error", optimizer="rmsprop", bidirectional=False):
@@ -140,32 +132,107 @@ def create_model(sequence_length, n_features, units=256, cell=LSTM, n_layers=2, 
     model.compile(loss=loss, metrics=["mean_absolute_error"], optimizer=optimizer)
     return model
 
-#%%
 
-# df = get_finance_data('VALE3.SA',period='1y')
-# df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+# In[5]:
+
+def predict(model, data, scale=True):
+    # retrieve the last sequence from data
+    last_sequence = data["last_sequence"]
+    # expand dimension
+    last_sequence = np.expand_dims(last_sequence, axis=0)
+    # get the prediction (scaled from 0 to 1)
+    prediction = model.predict(last_sequence)
+    # get the price (by inverting the scaling)
+    if scale:
+        predicted_price = data["column_scaler"]["target"].inverse_transform(prediction)[0][0]
+    else:
+        predicted_price = prediction[0][0]
+    return predicted_price    
+
+
+def get_final_df(model, data, target_col='target', scale=True):
+    """
+    This function takes the `model` and `data` dict to 
+    construct a final dataframe that includes the features along 
+    with true and predicted prices of the testing dataset
+    """
+    # if predicted future price is higher than the current, then calculate the true future price minus the current price, to get the buy profit
+    buy_profit  = lambda current, true_future, pred_future: true_future - current if pred_future > current else 0
+    # if the predicted future price is lower than the current price, then subtract the true future price from the current price
+    sell_profit = lambda current, true_future, pred_future: current - true_future if pred_future < current else 0
+    X_test = data["X_test"]
+    y_test = data["y_test"]
+    # perform prediction and get prices
+    y_pred = model.predict(X_test)
+    if scale:
+        y_test = np.squeeze(data["column_scaler"][target_col].inverse_transform(np.expand_dims(y_test, axis=0)))
+        y_pred = np.squeeze(data["column_scaler"][target_col].inverse_transform(y_pred))
+    test_df = data["test_df"]
+    # add predicted future prices to the dataframe
+    test_df[f"target_{LOOKUP_STEP}"] = y_pred
+    # add true future prices to the dataframe
+    test_df[f"true_target_{LOOKUP_STEP}"] = y_test
+    # sort the dataframe by date
+    test_df.sort_index(inplace=True)
+    final_df = test_df
+    # add the buy profit column
+    final_df["buy_profit"] = list(map(buy_profit, 
+                                    final_df[target_col], 
+                                    final_df[f"target_{LOOKUP_STEP}"], 
+                                    final_df[f"true_target_{LOOKUP_STEP}"])
+                                    # since we don't have profit for last sequence, add 0's
+                                    )
+    # add the sell profit column
+    final_df["sell_profit"] = list(map(sell_profit, 
+                                    final_df[target_col], 
+                                    final_df[f"target_{LOOKUP_STEP}"], 
+                                    final_df[f"true_target_{LOOKUP_STEP}"])
+                                    # since we don't have profit for last sequence, add 0's
+                                    )
+    return final_df
+
+
+# In[11]:
+
+def plot_graph(test_df):
+    """
+    This function plots true close price along with predicted close price
+    with blue and red colors respectively
+    """
+    plt.plot(test_df[f'true_target_{LOOKUP_STEP}'], c='b')
+    plt.plot(test_df[f'target_{LOOKUP_STEP}'], c='r')
+    plt.xlabel("Days")
+    plt.ylabel("Price")
+    plt.legend(["Actual Price", "Predicted Price"])
+    plt.show()
+
+
+# In[5]:
 
 ticker = "VALE3.SA"
-df = si.get_data(ticker, start_date='20200701', end_date='20201229')
-df = df[["adjclose", "volume", "open", "high", "low"]]
+df = get_finance_data(ticker, period='10y')
+df['target'] = df['Close']
+df = df[['Open', 'High', 'Low', 'Volume', 'Close', 'target']][1:]
 
-#%%
+
+# In[6]:
+
 
 import time
 
 # Window size or the sequence length
 N_STEPS = 50
-LOOKUP_STEP = 15
+LOOKUP_STEP = 5
 # whether to scale feature columns & output price as well
-SCALE = True
-scale_str = f"sc-{int(SCALE)}"
+scale_str = f"sc-{int(True)}"
 SHUFFLE = True
 shuffle_str = f"sh-{int(SHUFFLE)}"
 # whether to split the training/testing set by date
 SPLIT_BY_DATE = False
 split_by_date_str = f"sbd-{int(SPLIT_BY_DATE)}"
 TEST_SIZE = 0.2
-FEATURE_COLUMNS = list(df.columns)   
+FEATURE_COLUMNS = ['Open', 'High', 'Low', 'Volume', 'Close']#list(df.columns)
+# TARGET_COL = 'Close'
 ### model parameters
 N_LAYERS = 2
 # LSTM cell
@@ -182,34 +249,32 @@ BIDIRECTIONAL = False
 LOSS = "huber_loss"
 OPTIMIZER = "adam"
 BATCH_SIZE = 64
-EPOCHS = 50
+EPOCHS = 200
 
 date_now = time.strftime("%Y-%m-%d")
 # model name to save, making it as unique as possible based on parameters
-model_name = f"{date_now}_{ticker}-{shuffle_str}-{scale_str}-{split_by_date_str}-\
-{LOSS}-{OPTIMIZER}-{CELL.__name__}-seq-{N_STEPS}-step-{LOOKUP_STEP}-layers-{N_LAYERS}-units-{UNITS}"
+model_name = f"{date_now}_{ticker}-{shuffle_str}-{scale_str}-{split_by_date_str}-{LOSS}-{OPTIMIZER}-{CELL.__name__}-seq-{N_STEPS}-step-{LOOKUP_STEP}-layers-{N_LAYERS}-units-{UNITS}"
 if BIDIRECTIONAL:
     model_name += "-b"
 
-
-#%%
-data = load_data(df, N_STEPS, scale=SCALE, split_by_date=SPLIT_BY_DATE, 
+data = load_data(df, N_STEPS, scale=True, split_by_date=SPLIT_BY_DATE, 
                 shuffle=SHUFFLE, lookup_step=LOOKUP_STEP, test_size=TEST_SIZE, 
-                feature_columns=FEATURE_COLUMNS, target_col='adjclose')
+                feature_columns=FEATURE_COLUMNS)
 
-#%%
+
+# In[7]:
+
+
 # create these folders if they does not exist
 if not os.path.isdir("results"):
     os.mkdir("results")
 if not os.path.isdir("logs"):
     os.mkdir("logs")
-if not os.path.isdir("data"):
-    os.mkdir("data")
-    
-# save the dataframe
-# ticker_data_filename = os.path.join("data", f"{ticker}_{date_now}.csv")
-# data["df"].to_csv(ticker_data_filename)
-#%%
+
+
+# In[8]:
+
+
 # construct the model
 model = create_model(N_STEPS, len(FEATURE_COLUMNS), loss=LOSS, units=UNITS, cell=CELL, n_layers=N_LAYERS,
                     dropout=DROPOUT, optimizer=OPTIMIZER, bidirectional=BIDIRECTIONAL)
@@ -221,8 +286,7 @@ import time
 start = time.time()
 print('Inicio:', time.ctime(start))
 
-# train the model and save the weights whenever we see 
-# a new optimal model using ModelCheckpoint
+# train the model and save the weights whenever we see a new optimal model using ModelCheckpoint
 history = model.fit(data["X_train"], data["y_train"],
                     batch_size=BATCH_SIZE,
                     epochs=EPOCHS,
@@ -231,121 +295,35 @@ history = model.fit(data["X_train"], data["y_train"],
                     verbose=0, 
                     use_multiprocessing=True)
 
-
 end = time.time()
 print('Fim:', time.ctime(end))
 print('Tempo total', round((end - start)/60, 2), 'min')
 
+#desempenho do treino
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.legend(['treino','teste'])
 
-# In[53]:
-
-
-
-
-def plot_graph(test_df):
-    """
-    This function plots true close price along with predicted close price
-    with blue and red colors respectively
-    """
-    plt.plot(test_df[f'true_adjclose_{LOOKUP_STEP}'], c='b')
-    plt.plot(test_df[f'adjclose_{LOOKUP_STEP}'], c='r')
-    plt.xlabel("Days")
-    plt.ylabel("Price")
-    plt.legend(["Actual Price", "Predicted Price"])
-    plt.show()
-
-
-# In[54]:
-
-
-def get_final_df(model, data):
-    """
-    This function takes the `model` and `data` dict to 
-    construct a final dataframe that includes the features along 
-    with true and predicted prices of the testing dataset
-    """
-    # if predicted future price is higher than the current, then calculate the true future price minus the current price, to get the buy profit
-    buy_profit  = lambda current, true_future, pred_future: true_future - current if pred_future > current else 0
-    # if the predicted future price is lower than the current price, then subtract the true future price from the current price
-    sell_profit = lambda current, true_future, pred_future: current - true_future if pred_future < current else 0
-    X_test = data["X_test"]
-    y_test = data["y_test"]
-    # perform prediction and get prices
-    y_pred = model.predict(X_test)
-    if SCALE:
-        y_test = np.squeeze(data["column_scaler"]["adjclose"].inverse_transform(np.expand_dims(y_test, axis=0)))
-        y_pred = np.squeeze(data["column_scaler"]["adjclose"].inverse_transform(y_pred))
-    test_df = data["test_df"]
-    # add predicted future prices to the dataframe
-    test_df[f"adjclose_{LOOKUP_STEP}"] = y_pred
-    # add true future prices to the dataframe
-    test_df[f"true_adjclose_{LOOKUP_STEP}"] = y_test
-    # sort the dataframe by date
-    test_df.sort_index(inplace=True)
-    final_df = test_df
-    # add the buy profit column
-    final_df["buy_profit"] = list(map(buy_profit, 
-                                    final_df["adjclose"], 
-                                    final_df[f"adjclose_{LOOKUP_STEP}"], 
-                                    final_df[f"true_adjclose_{LOOKUP_STEP}"])
-                                    # since we don't have profit for last sequence, add 0's
-                                    )
-    # add the sell profit column
-    final_df["sell_profit"] = list(map(sell_profit, 
-                                    final_df["adjclose"], 
-                                    final_df[f"adjclose_{LOOKUP_STEP}"], 
-                                    final_df[f"true_adjclose_{LOOKUP_STEP}"])
-                                    # since we don't have profit for last sequence, add 0's
-                                    )
-    return final_df
-
-
-# In[55]:
-
-
-def predict(model, data):
-    # retrieve the last sequence from data
-    last_sequence = data["last_sequence"][-N_STEPS:]
-    # expand dimension
-    last_sequence = np.expand_dims(last_sequence, axis=0)
-    # get the prediction (scaled from 0 to 1)
-    prediction = model.predict(last_sequence)
-    # get the price (by inverting the scaling)
-    if SCALE:
-        predicted_price = data["column_scaler"]["adjclose"].inverse_transform(prediction)[0][0]
-    else:
-        predicted_price = prediction[0][0]
-    return predicted_price
-
-
-# In[56]:
-
+# In[9]:
 
 # load optimal model weights from results folder
 model_path = os.path.join("results", model_name) + ".h5"
 model.load_weights(model_path)
 
-
-# In[38]:
-
-
 # evaluate the model
 loss, mae = model.evaluate(data["X_test"], data["y_test"], verbose=0)
 # calculate the mean absolute error (inverse scaling)
-if SCALE:
-    mean_absolute_error = data["column_scaler"]["adjclose"].inverse_transform([[mae]])[0][0]
+if True:
+    mean_absolute_error = data["column_scaler"]["target"].inverse_transform([[mae]])[0][0]
 else:
     mean_absolute_error = mae
 
-
-# In[223]:
-
-final_df = get_final_df(model, data)
 future_price = predict(model, data)
 
-# In[145]:
+# In[12]:
 
-    # we calculate the accuracy by counting the number of positive profits
+final_df = get_final_df(model, data)
+# we calculate the accuracy by counting the number of positive profits
 accuracy_score = (len(final_df[final_df['sell_profit'] > 0]) + len(final_df[final_df['buy_profit'] > 0])) / len(final_df)
 # calculating total buy & sell profit
 total_buy_profit  = final_df["buy_profit"].sum()
@@ -354,9 +332,6 @@ total_sell_profit = final_df["sell_profit"].sum()
 total_profit = total_buy_profit + total_sell_profit
 # dividing total profit by number of testing samples (number of trades)
 profit_per_trade = total_profit / len(final_df)
-
-
-# In[219]:
 
 # printing metrics
 print(f"Future price after {LOOKUP_STEP} days is {future_price:.2f}$")
@@ -369,22 +344,11 @@ print("Total profit:", total_profit)
 print("Profit per trade:", profit_per_trade)
 
 
-# In[147]:
-
-    # plot true/pred prices graph
+# In[13]:
 plot_graph(final_df)
 
-
-# In[101]:
-
-
+# In[14]:
 print(final_df.tail(10))
-# save the final dataframe to csv-results folder
-csv_results_folder = "csv-results"
-if not os.path.isdir(csv_results_folder):
-    os.mkdir(csv_results_folder)
-csv_filename = os.path.join(csv_results_folder, model_name + ".csv")
-final_df.to_csv(csv_filename)
 
 
 
