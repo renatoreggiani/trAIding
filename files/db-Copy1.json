@@ -1,4 +1,0 @@
-{
-"BBFI11B":{"yticker":"BBFI11B.SA", "ARIMA":{"parametros":[1,0,0,1,1,1],"train_date":"30/12/2020"}, "SARIMA":{"parametros":[1,0,2,0,1,2,12],"train_date":"30/12/2020"}},
-"RBBV11":{"yticker":"BBFI11B.SA", "ARIMA":{"parametros":[1,0,0,1,1,1],"train_date":"30/12/2020"}, "SARIMA":{"parametros":[1,0,2,0,1,2,12],"train_date":"30/12/2020"}}
-}
