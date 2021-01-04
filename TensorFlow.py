@@ -88,7 +88,6 @@ def load_data(df, n_steps=50, scale=True, shuffle=True, lookup_step=1, split_by_
     X = np.array(X)
     y = np.array(y)
     if split_by_date:
-        # split the dataset into training & testing sets by date (not randomly splitting)
         train_samples = int((1 - test_size) * len(X))
         result["X_train"] = X[:train_samples]
         result["y_train"] = y[:train_samples]
@@ -148,7 +147,7 @@ def create_model(sequence_length, n_features, units=256, cell=LSTM, n_layers=2, 
 
 ticker = "VALE3.SA"
 df = si.get_data(ticker, start_date='20200701', end_date='20201229')
-df = df[['open', 'high', 'low', 'close', 'adjclose', 'volume']]
+df = df[["adjclose", "volume", "open", "high", "low"]]
 
 #%%
 
@@ -156,30 +155,23 @@ import time
 
 # Window size or the sequence length
 N_STEPS = 50
-# Lookup step, 1 is the next day
 LOOKUP_STEP = 15
 # whether to scale feature columns & output price as well
 SCALE = True
 scale_str = f"sc-{int(SCALE)}"
-# whether to shuffle the dataset
 SHUFFLE = True
 shuffle_str = f"sh-{int(SHUFFLE)}"
 # whether to split the training/testing set by date
 SPLIT_BY_DATE = False
 split_by_date_str = f"sbd-{int(SPLIT_BY_DATE)}"
-# test ratio size, 0.2 is 20%
 TEST_SIZE = 0.2
-# features to use
-FEATURE_COLUMNS = ["adjclose", "volume", "open", "high", "low"]
-# date now
-date_now = time.strftime("%Y-%m-%d")
+FEATURE_COLUMNS = list(df.columns)   
 ### model parameters
 N_LAYERS = 2
 # LSTM cell
 CELL = LSTM
 # 256 LSTM neurons
 UNITS = 256
-# 40% dropout
 DROPOUT = 0.4
 # whether to use bidirectional RNNs
 BIDIRECTIONAL = False
@@ -190,9 +182,9 @@ BIDIRECTIONAL = False
 LOSS = "huber_loss"
 OPTIMIZER = "adam"
 BATCH_SIZE = 64
-EPOCHS = 500
+EPOCHS = 50
 
-
+date_now = time.strftime("%Y-%m-%d")
 # model name to save, making it as unique as possible based on parameters
 model_name = f"{date_now}_{ticker}-{shuffle_str}-{scale_str}-{split_by_date_str}-\
 {LOSS}-{OPTIMIZER}-{CELL.__name__}-seq-{N_STEPS}-step-{LOOKUP_STEP}-layers-{N_LAYERS}-units-{UNITS}"
@@ -201,7 +193,6 @@ if BIDIRECTIONAL:
 
 
 #%%
-# load the data
 data = load_data(df, N_STEPS, scale=SCALE, split_by_date=SPLIT_BY_DATE, 
                 shuffle=SHUFFLE, lookup_step=LOOKUP_STEP, test_size=TEST_SIZE, 
                 feature_columns=FEATURE_COLUMNS, target_col='adjclose')
@@ -223,8 +214,8 @@ if not os.path.isdir("data"):
 model = create_model(N_STEPS, len(FEATURE_COLUMNS), loss=LOSS, units=UNITS, cell=CELL, n_layers=N_LAYERS,
                     dropout=DROPOUT, optimizer=OPTIMIZER, bidirectional=BIDIRECTIONAL)
 # some tensorflow callbacks
-checkpointer = ModelCheckpoint(os.path.join("C:\\Users\\f8564619\\results\\", model_name + ".h5"), save_weights_only=True, save_best_only=True, verbose=1)
-tensorboard = TensorBoard(log_dir=os.path.join("C:\\Users\\f8564619\logs\\", model_name))
+checkpointer = ModelCheckpoint(os.path.join("results", model_name + ".h5"), save_weights_only=True, save_best_only=True, verbose=1)
+tensorboard = TensorBoard(log_dir=os.path.join("logs", model_name))
 
 import time
 start = time.time()
