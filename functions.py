@@ -50,6 +50,8 @@ def arima_forecast(s, next=1, p=5, d=1, q=0):
     col_ref: Coluna de referência
     '''    
     
+    #if isinstance(s, str): tratar como string
+    
     if test_unit_root(s):
         model = ARIMA(s, order=(p,d,q)).fit()
         forecast = model.forecast(steps=next)[0]
