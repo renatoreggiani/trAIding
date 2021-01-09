@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
-
 # In[1]:
-
-
+    
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -21,10 +18,8 @@ from pmdarima.arima import auto_arima
 
 plt.style.use('fivethirtyeight')
 
-
 # In[2]:
-
-
+    
 def get_finance_data(ticker, period='max', interval='1d'):
     tkr = yf.Ticker(ticker)
     df = tkr.history(period=period, interval=interval)
@@ -45,10 +40,20 @@ def get_arima_model(s, is_seasonal=False):
                              suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
     return arima_model
 
+def get_arima_data(yticker):
+    data_return = ''
+    if os.path.isfile("files/db.json"):
+        with open('files/db.json','r+') as jfile:
+            jdata = json.load(jfile)
+            if (yticker in jdata.keys()):
+                if ("ARIMA" in jdata[yticker]):
+                    data_return = jdata[yticker]["ARIMA"]["parametros"]
+                else:
+                    print("Data for "+yticker+" not found")
+    return data_return
 
 # In[20]:
-
-
+    
 def run_arima_coach(yticker_list, days_force_update=0):
 
     n_steps = 2
@@ -106,31 +111,35 @@ def run_arima_coach(yticker_list, days_force_update=0):
                 json.dump(jdata, jfile)
         
         jfile.close()
-
-
+        
 # In[21]:
+    
+def do_arima_forecast(yticker):
+    yticker = "BBFI11B.SA" #apagar
+    #date_ini = datetime.datetime.now().strftime("%Y-%m-%d")
+    o = get_arima_data(yticker)
+    df_log = get_finance_data(yticker)
+    df_log = df_log['Low']
+    model = ARIMA(df_log, order=(o[0],o[1],o[2]))
+    results = model.fit(disp=-1)
+    return results.fittedvalues
+
+# In[ ]:
 
 teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
 run_arima_coach(teste, days_force_update=2)
 
 # In[ ]:
 
-
-data = get_finance_data("OIBR3.SA")
-data.isnull().sum()
-
-
-# In[ ]:
-
-
-data.dropna(subset=["Low"], inplace=True)
-print(data)
-
+fc = do_arima_forecast("RBBV11.SA")
+df_log = get_finance_data("RBBV11.SA")
+df_log = df_log['Low']
+plt.plot(df_log[-5:], color='blue')
+plt.plot(fc[-5:], color='red')
 
 # In[8]:
 
 
-datetime.datetime.now()
 
 
 # In[11]:
@@ -142,7 +151,6 @@ datetime.datetime.now()
 # In[13]:
 
 
-(datetime.datetime.now() - datetime.datetime.strptime("2021-01-21", '%Y-%m-%d')).days
 
 
 # In[ ]:
