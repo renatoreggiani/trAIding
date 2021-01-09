@@ -18,12 +18,19 @@ from pmdarima.arima import auto_arima
 
 plt.style.use('fivethirtyeight')
 
+import warnings
+warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARMA',
+                        FutureWarning)
+warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARIMA',
+                        FutureWarning)
+
+
 # In[2]:
     
 def get_finance_data(ticker, period='max', interval='1d'):
     tkr = yf.Ticker(ticker)
     df = tkr.history(period=period, interval=interval)
-    return df
+    return df.dropna(subset=['Low'])
 
 def test_unit_root(s):
     adf = adfuller(s)
@@ -115,14 +122,22 @@ def run_arima_coach(yticker_list, days_force_update=0):
 # In[21]:
     
 def do_arima_forecast(yticker):
-    yticker = "BBFI11B.SA" #apagar
-    #date_ini = datetime.datetime.now().strftime("%Y-%m-%d")
-    o = get_arima_data(yticker)
-    df_log = get_finance_data(yticker)
-    df_log = df_log['Low']
-    model = ARIMA(df_log, order=(o[0],o[1],o[2]))
-    results = model.fit(disp=-1)
-    return results.fittedvalues
+    
+    warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARMA',FutureWarning)
+    warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARIMA',FutureWarning)
+    from statsmodels.tools.sm_exceptions import ConvergenceWarning
+    warnings.simplefilter('ignore', ConvergenceWarning)
+
+    #yticker = "PETR4.SA" #apagar
+    arima_order = get_arima_data(yticker)
+    if arima_order:
+        df_log = get_finance_data(yticker)
+        df_log = df_log['Low']
+        model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
+        model_fit = model.fit()
+        return model_fit.fittedvalues
+    else:
+        return False
 
 # In[ ]:
 
@@ -131,30 +146,24 @@ run_arima_coach(teste, days_force_update=2)
 
 # In[ ]:
 
-fc = do_arima_forecast("RBBV11.SA")
-df_log = get_finance_data("RBBV11.SA")
-df_log = df_log['Low']
-plt.plot(df_log[-5:], color='blue')
-plt.plot(fc[-5:], color='red')
+#TENTAR DESLIGAR O WARINING
+teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
 
-# In[8]:
+for ticker in teste:
+    predict = do_arima_forecast(ticker)
+    df_log = get_finance_data(ticker)
+    df_log = df_log['Low']
+    #plt.plot(df_log, color='blue')
+    #plt.plot(predict, color='red')
+    predict_pct = (predict.shift(-1)/df_log)-1
+    df_pct =  df_log.pct_change()
+    acertos = ((df_pct > 0) & (predict_pct >0)) | (predict_pct < 0) 
+    acertos = acertos[1:-1]
+    teste = ((acertos.value_counts(True))*100).round(2)
+    print(ticker+"\nAcertos: "+str(teste[True])+"%\nErros: "+str(teste[False])+"%")
 
-
-
-
-# In[11]:
-
-
-
-
-
-# In[13]:
-
+# In[]:
 
 
-
-# In[ ]:
-
-
-
+# In[]:
 
