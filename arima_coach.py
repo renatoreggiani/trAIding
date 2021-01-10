@@ -4,7 +4,7 @@
 # In[1]:
     
 import yfinance as yf
-import pandas as pd
+#import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 import os
@@ -123,11 +123,6 @@ def run_arima_coach(yticker_list, days_force_update=0):
     
 def do_arima_forecast(yticker):
     
-    warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARMA',FutureWarning)
-    warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARIMA',FutureWarning)
-    from statsmodels.tools.sm_exceptions import ConvergenceWarning
-    warnings.simplefilter('ignore', ConvergenceWarning)
-
     #yticker = "PETR4.SA" #apagar
     arima_order = get_arima_data(yticker)
     if arima_order:
@@ -136,6 +131,21 @@ def do_arima_forecast(yticker):
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         model_fit = model.fit()
         return model_fit.fittedvalues
+    else:
+        return False
+
+# In[]:
+    
+def get_next_value(yticker):
+
+    #yticker = "PETR4.SA" #apagar
+    arima_order = get_arima_data(yticker)
+    if arima_order:
+        df_log = get_finance_data(yticker)
+        df_log = df_log['Low']
+        model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
+        model_fit = model.fit()
+        return model_fit.forecast()[0]
     else:
         return False
 
@@ -148,22 +158,38 @@ run_arima_coach(teste, days_force_update=2)
 
 #TENTAR DESLIGAR O WARINING
 teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
-
+'''
 for ticker in teste:
+    ticker = "PETR4.SA"
     predict = do_arima_forecast(ticker)
     df_log = get_finance_data(ticker)
-    df_log = df_log['Low']
-    #plt.plot(df_log, color='blue')
-    #plt.plot(predict, color='red')
-    predict_pct = (predict.shift(-1)/df_log)-1
-    df_pct =  df_log.pct_change()
+    df_log = df_log.drop(columns=['Open','Close','Dividends','Stock Splits','Volume'])
+    #df_log['predict_pct'] = (predict.shift(-1)/df_log['Low'])-1
+    df_log['predict_pct'] = (predict/df_log['Low'])-1
+    df_log['actual_pct'] =  df_log['Low'].pct_change()
     acertos = ((df_pct > 0) & (predict_pct >0)) | (predict_pct < 0) 
     acertos = acertos[1:-1]
     teste = ((acertos.value_counts(True))*100).round(2)
     print(ticker+"\nAcertos: "+str(teste[True])+"%\nErros: "+str(teste[False])+"%")
-
+'''
 # In[]:
 
-
+    ticker = "PETR4.SA"
+    predict = do_arima_forecast(ticker)
+    df_log = get_finance_data(ticker)
+    df_log = df_log.drop(columns=['Open','Close','Dividends','Stock Splits','Volume'])
+    df_log['predict']=predict
+    df_log['predict_pct'] = (predict.shift(-1)/df_log['Low'])-1
+    #df_log['predict_pct'] = (predict/df_log['Low'])-1
+    df_log['actual_pct'] =  df_log['Low'].pct_change()
+    df_log['sucesso'] = ((df_log['predict_pct'] > 0) & (df_log['High'].shift(-1)>df_log['High'])) | (df_log['predict_pct'] < 0) 
+    #tentando fazer um operador ternario
+    #df_log['min_profit'] = np.where(df_log['predict_pct']>0, df_log['High']-df_log['High'].shift(1),0)
+    df_log['min_profit'] = np.where((df_log['predict_pct']>0) & (df_log['actual_pct']>0.005), 0.005,0)
+    
+    df_log = df_log[1:-1]
+    resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
+    print(ticker+"\nAcertos: "+str(resumo[True])+"%\nErros: "+str(resumo[False])+"%")
+    
 # In[]:
 
