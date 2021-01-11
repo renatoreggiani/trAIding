@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-
-
 # In[1]:
-
-
+    
 import yfinance as yf
-import pandas as pd
+#import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
 import os
@@ -21,14 +18,19 @@ from pmdarima.arima import auto_arima
 
 plt.style.use('fivethirtyeight')
 
+import warnings
+warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARMA',
+                        FutureWarning)
+warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARIMA',
+                        FutureWarning)
+
 
 # In[2]:
-
-
+    
 def get_finance_data(ticker, period='max', interval='1d'):
     tkr = yf.Ticker(ticker)
     df = tkr.history(period=period, interval=interval)
-    return df
+    return df.dropna(subset=['Low'])
 
 def test_unit_root(s):
     adf = adfuller(s)
@@ -45,10 +47,20 @@ def get_arima_model(s, is_seasonal=False):
                              suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
     return arima_model
 
+def get_arima_data(yticker):
+    data_return = ''
+    if os.path.isfile("files/db.json"):
+        with open('files/db.json','r+') as jfile:
+            jdata = json.load(jfile)
+            if (yticker in jdata.keys()):
+                if ("ARIMA" in jdata[yticker]):
+                    data_return = jdata[yticker]["ARIMA"]["parametros"]
+                else:
+                    print("Data for "+yticker+" not found")
+    return data_return
 
 # In[20]:
-
-
+    
 def run_arima_coach(yticker_list, days_force_update=0):
 
     n_steps = 2
@@ -106,47 +118,78 @@ def run_arima_coach(yticker_list, days_force_update=0):
                 json.dump(jdata, jfile)
         
         jfile.close()
-
-
+        
 # In[21]:
+    
+def do_arima_forecast(yticker):
+    
+    #yticker = "PETR4.SA" #apagar
+    arima_order = get_arima_data(yticker)
+    if arima_order:
+        df_log = get_finance_data(yticker)
+        df_log = df_log['Low']
+        model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
+        model_fit = model.fit()
+        return model_fit.fittedvalues
+    else:
+        return False
+
+# In[]:
+    
+def get_next_value(yticker):
+
+    #yticker = "PETR4.SA" #apagar
+    arima_order = get_arima_data(yticker)
+    if arima_order:
+        df_log = get_finance_data(yticker)
+        df_log = df_log['Low']
+        model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
+        model_fit = model.fit()
+        return model_fit.forecast()[0]
+    else:
+        return False
+
+# In[ ]:
 
 teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
 run_arima_coach(teste, days_force_update=2)
 
 # In[ ]:
 
+#TENTAR DESLIGAR O WARINING
+teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
+'''
+for ticker in teste:
+    ticker = "PETR4.SA"
+    predict = do_arima_forecast(ticker)
+    df_log = get_finance_data(ticker)
+    df_log = df_log.drop(columns=['Open','Close','Dividends','Stock Splits','Volume'])
+    #df_log['predict_pct'] = (predict.shift(-1)/df_log['Low'])-1
+    df_log['predict_pct'] = (predict/df_log['Low'])-1
+    df_log['actual_pct'] =  df_log['Low'].pct_change()
+    acertos = ((df_pct > 0) & (predict_pct >0)) | (predict_pct < 0) 
+    acertos = acertos[1:-1]
+    teste = ((acertos.value_counts(True))*100).round(2)
+    print(ticker+"\nAcertos: "+str(teste[True])+"%\nErros: "+str(teste[False])+"%")
+'''
+# In[]:
 
-data = get_finance_data("OIBR3.SA")
-data.isnull().sum()
-
-
-# In[ ]:
-
-
-data.dropna(subset=["Low"], inplace=True)
-print(data)
-
-
-# In[8]:
-
-
-datetime.datetime.now()
-
-
-# In[11]:
-
-
-
-
-
-# In[13]:
-
-
-(datetime.datetime.now() - datetime.datetime.strptime("2021-01-21", '%Y-%m-%d')).days
-
-
-# In[ ]:
-
-
-
+    ticker = "PETR4.SA"
+    predict = do_arima_forecast(ticker)
+    df_log = get_finance_data(ticker)
+    df_log = df_log.drop(columns=['Open','Close','Dividends','Stock Splits','Volume'])
+    df_log['predict']=predict
+    df_log['predict_pct'] = (predict.shift(-1)/df_log['Low'])-1
+    #df_log['predict_pct'] = (predict/df_log['Low'])-1
+    df_log['actual_pct'] =  df_log['Low'].pct_change()
+    df_log['sucesso'] = ((df_log['predict_pct'] > 0) & (df_log['High'].shift(-1)>df_log['High'])) | (df_log['predict_pct'] < 0) 
+    #tentando fazer um operador ternario
+    #df_log['min_profit'] = np.where(df_log['predict_pct']>0, df_log['High']-df_log['High'].shift(1),0)
+    df_log['min_profit'] = np.where((df_log['predict_pct']>0) & (df_log['actual_pct']>0.005), 0.005,0)
+    
+    df_log = df_log[1:-1]
+    resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
+    print(ticker+"\nAcertos: "+str(resumo[True])+"%\nErros: "+str(resumo[False])+"%")
+    
+# In[]:
 
