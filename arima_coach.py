@@ -4,8 +4,8 @@
 # In[1]:
     
 import yfinance as yf
-#import pandas as pd
-import numpy as np
+import pandas as pd
+#import numpy as np
 import matplotlib.pyplot as plt 
 import os
 import json
@@ -91,7 +91,7 @@ def run_arima_coach(yticker_list, days_force_update=0):
                     data = get_finance_data(yticker)
                     data.dropna(subset=['Close'], inplace=True)
                     train = data['Close'][:len(data)-n_steps+1]
-                    test = data['Close'][-n_steps:]
+                    #test = data['Close'][-n_steps:]
                     jdata[ticker]={}
                     jdata[ticker].update({"yticker":yticker})
                     jfile.seek(0)
@@ -152,36 +152,44 @@ run_arima_coach(teste, days_force_update=2)
 
 # In[ ]:
 
-teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
 
+    
 # In[]:
 
-    ticker = "PETR4.SA"
+ticker = "PETR4.SA" #apagar, uso somente para teste
+teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA"]
+
+for ticker in teste:
     predict = do_arima_forecast(ticker)
     df_log = get_finance_data(ticker)
     df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
+    df_log = df_log[1:-1]
     df_log['predict']=predict
     df_log['predict_pct'] = (predict/df_log['Close'])-1
     df_log['actual_pct'] =  df_log['Close'].pct_change()
-    df_log['sucesso'] = ((df_log['predict_pct'] > 0) & (df_log['High'].shift(-1)>df_log['High'])) | (df_log['predict_pct'] < 0) 
-    #tentando fazer um operador ternario
-    #df_log['profit_05_pct'] = np.where((df_log['predict_pct']>0) & (df_log['actual_pct']>0.005), 0.005,0)
-    #df_log['entrada'] = df_log[df_log['predict'].shift(1)*0.995 < df_log['Low']]['predict'].shift(1)*0.995
-    df_log['entrada_predict'] = df_log['predict'].shift(1)
-    df_log['entrada_predict'] = df_log['entrada_predict']*0.995
-    df_log['entrada_predict'] = df_log[(df_log['entrada_predict']>df_log['Low']) & (df_log['predict_pct'].shift(1)>0.005)]['entrada_predict']
-    df_log['entrada_open'] = df_log[df_log['Open']<df_log['entrada_predict']]['Open']
-    df_log['saida_predict'] = df_log[(df_log['predict'].shift(1)>df_log['Close']) & (df_log['entrada'].notna())]['Close']
-    df_log['saida_close'] = df_log[(df_log['predict'].shift(1)<=df_log['Close']) & (df_log['entrada'].notna())]['predict']
-    df_log['profit_05'] = df_log['saida_close'].fillna(0)+df_log['saida_predict'].fillna(0)-df_log['entrada']
-    df_log = df_log[1:-1]
-    df_log['profit_05'].mean()
-    #df_log['saida'] = df_log['Close'] if df_log['predict'].shift(1)>df_log['Close'] else  df_log['predict']
-    
-    #if low < predict*0,995 | if close < predict = cliose else predict
 
-     resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
+    #captura entradas
+    entrada = pd.DataFrame()
+    entrada['predict'] = df_log['predict_pct']
+    entrada['predict'] = df_log[df_log['predict_pct'].shift(1)>0.005]['predict'].shift(1)
+    entrada['open'] = df_log[df_log['predict_pct'].shift(1)>0.005]['Open']
+    df_log['entrada'] = entrada['predict'].combine(entrada['open'],min)
+
+    #captura saida
+    saida = pd.DataFrame()
+    saida['predict'] = df_log[df_log['predict_pct'].shift(1)>0.005]['Open']
+    saida['predict'] = df_log[(df_log['predict'].shift(1)> df_log['High']) & (df_log['entrada'].notna())]['Close']
+    saida['close'] = df_log[(df_log['predict'].shift(1)<=df_log['High']) & (df_log['entrada'].notna())]['predict']
+    df_log['saida'] = saida['predict'].fillna(0)+saida['close'].fillna(0)
+
+    #calculando lucro
+    df_log['profit_05'] = (df_log['saida']/df_log['entrada'])-1
+    df_log['profit_05'] = df_log['profit_05'].fillna(0)
+    df_log['sucesso'] = (df_log['profit_05']>0) | (df_log['entrada'].isnull())
+    profit_day = df_log['profit_05'].mean()
+    profit_month = ((1+profit_day) ** 20) -1
+
+    resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
     print(ticker+"\nAcertos: "+str(resumo[True])+"%\nErros: "+str(resumo[False])+"%")
-    
-# In[]:
-
+    print("Lucro médio diário:"+str(round(profit_day*100,2))+"%")
+    print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%\n")
