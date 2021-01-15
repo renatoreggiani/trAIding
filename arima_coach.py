@@ -19,15 +19,11 @@ from pmdarima.arima import auto_arima
 plt.style.use('fivethirtyeight')
 
 import warnings
-warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARMA',
-                        FutureWarning)
-warnings.filterwarnings('ignore', 'statsmodels.tsa.arima_model.ARIMA',
-                        FutureWarning)
-
+warnings.filterwarnings('ignore')
 
 # In[2]:
     
-def get_finance_data(ticker, period='max', interval='1d'):
+def get_finance_data(ticker, period='5y', interval='1d'):
     tkr = yf.Ticker(ticker)
     df = tkr.history(period=period, interval=interval)
     return df.dropna(subset=['Low'])
@@ -93,9 +89,9 @@ def run_arima_coach(yticker_list, days_force_update=0):
                 if must_run:
                     print("capturando dados do yFinance: "+yticker)
                     data = get_finance_data(yticker)
-                    data.dropna(subset=['Low'], inplace=True)
-                    train = data['Low'][:len(data)-n_steps+1]
-                    test = data['Low'][-n_steps:]
+                    data.dropna(subset=['Close'], inplace=True)
+                    train = data['Close'][:len(data)-n_steps+1]
+                    test = data['Close'][-n_steps:]
                     jdata[ticker]={}
                     jdata[ticker].update({"yticker":yticker})
                     jfile.seek(0)
@@ -156,39 +152,35 @@ run_arima_coach(teste, days_force_update=2)
 
 # In[ ]:
 
-#TENTAR DESLIGAR O WARINING
 teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
-'''
-for ticker in teste:
-    ticker = "PETR4.SA"
-    predict = do_arima_forecast(ticker)
-    df_log = get_finance_data(ticker)
-    df_log = df_log.drop(columns=['Open','Close','Dividends','Stock Splits','Volume'])
-    #df_log['predict_pct'] = (predict.shift(-1)/df_log['Low'])-1
-    df_log['predict_pct'] = (predict/df_log['Low'])-1
-    df_log['actual_pct'] =  df_log['Low'].pct_change()
-    acertos = ((df_pct > 0) & (predict_pct >0)) | (predict_pct < 0) 
-    acertos = acertos[1:-1]
-    teste = ((acertos.value_counts(True))*100).round(2)
-    print(ticker+"\nAcertos: "+str(teste[True])+"%\nErros: "+str(teste[False])+"%")
-'''
+
 # In[]:
 
     ticker = "PETR4.SA"
     predict = do_arima_forecast(ticker)
     df_log = get_finance_data(ticker)
-    df_log = df_log.drop(columns=['Open','Close','Dividends','Stock Splits','Volume'])
+    df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
     df_log['predict']=predict
-    df_log['predict_pct'] = (predict.shift(-1)/df_log['Low'])-1
-    #df_log['predict_pct'] = (predict/df_log['Low'])-1
-    df_log['actual_pct'] =  df_log['Low'].pct_change()
+    df_log['predict_pct'] = (predict/df_log['Close'])-1
+    df_log['actual_pct'] =  df_log['Close'].pct_change()
     df_log['sucesso'] = ((df_log['predict_pct'] > 0) & (df_log['High'].shift(-1)>df_log['High'])) | (df_log['predict_pct'] < 0) 
     #tentando fazer um operador ternario
-    #df_log['min_profit'] = np.where(df_log['predict_pct']>0, df_log['High']-df_log['High'].shift(1),0)
-    df_log['min_profit'] = np.where((df_log['predict_pct']>0) & (df_log['actual_pct']>0.005), 0.005,0)
-    
+    #df_log['profit_05_pct'] = np.where((df_log['predict_pct']>0) & (df_log['actual_pct']>0.005), 0.005,0)
+    #df_log['entrada'] = df_log[df_log['predict'].shift(1)*0.995 < df_log['Low']]['predict'].shift(1)*0.995
+    df_log['entrada_predict'] = df_log['predict'].shift(1)
+    df_log['entrada_predict'] = df_log['entrada_predict']*0.995
+    df_log['entrada_predict'] = df_log[(df_log['entrada_predict']>df_log['Low']) & (df_log['predict_pct'].shift(1)>0.005)]['entrada_predict']
+    df_log['entrada_open'] = df_log[df_log['Open']<df_log['entrada_predict']]['Open']
+    df_log['saida_predict'] = df_log[(df_log['predict'].shift(1)>df_log['Close']) & (df_log['entrada'].notna())]['Close']
+    df_log['saida_close'] = df_log[(df_log['predict'].shift(1)<=df_log['Close']) & (df_log['entrada'].notna())]['predict']
+    df_log['profit_05'] = df_log['saida_close'].fillna(0)+df_log['saida_predict'].fillna(0)-df_log['entrada']
     df_log = df_log[1:-1]
-    resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
+    df_log['profit_05'].mean()
+    #df_log['saida'] = df_log['Close'] if df_log['predict'].shift(1)>df_log['Close'] else  df_log['predict']
+    
+    #if low < predict*0,995 | if close < predict = cliose else predict
+
+     resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
     print(ticker+"\nAcertos: "+str(resumo[True])+"%\nErros: "+str(resumo[False])+"%")
     
 # In[]:
