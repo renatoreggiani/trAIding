@@ -128,8 +128,8 @@ def do_arima_forecast(yticker):
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         try:    
             model_fit = model.fit()
-        except: 
-            print(Exception)
+        except Exception as e: 
+            print(str(e)+"\n")
             return False 
         return model_fit.fittedvalues
     else:
@@ -171,16 +171,16 @@ def run_statistics(tickerlist, ganho_min=0.005, gap=0.995):
          entrada['predict'] = entrada['predict'].shift(1)
          entrada['open'] = df_log[entrada['predict'].notnull()]['Open']
          df_log['entrada'] = entrada['predict'].combine(entrada['open'],min)
-    
+
          #captura saida
          df_log['saida'] = df_log[df_log['entrada'].notnull()]['Close']
-    
+
          #calculando lucro
          df_log['profit'] = (df_log['saida']/df_log['entrada'])-1
          df_log['profit'] = df_log['profit'].fillna(0)
          profit_day = df_log['profit'].mean()
          profit_month = ((1+profit_day) ** 20) -1
-         
+
          #calculando assertividade da subida
          df_log['sucesso'] = (df_log['profit']>0) | (df_log['entrada'].isnull())
          df_log['subida'] = df_log[df_log['entrada'].notnull()]['profit']>0
