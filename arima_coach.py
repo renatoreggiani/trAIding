@@ -129,7 +129,8 @@ def do_arima_forecast(yticker):
         try:    
             model_fit = model.fit()
         except Exception as e: 
-            print(e+"\n")
+            print(e)
+            print("\n")
             return False 
         return model_fit.fittedvalues
     else:
