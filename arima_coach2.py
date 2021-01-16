@@ -129,7 +129,7 @@ def do_arima_forecast(yticker):
         try:    
             model_fit = model.fit()
         except Exception as e: 
-            print(e+"\n")
+            print(str(e)+"\n")
             return False 
         return model_fit.fittedvalues
     else:
@@ -171,16 +171,24 @@ def run_statistics(tickerlist, ganho_min=0.005, gap=0.995):
          entrada['predict'] = entrada['predict'].shift(1)
          entrada['open'] = df_log[entrada['predict'].notnull()]['Open']
          df_log['entrada'] = entrada['predict'].combine(entrada['open'],min)
-    
+
          #captura saida
-         df_log['saida'] = df_log[df_log['entrada'].notnull()]['Close']
-    
+         saida = pd.DataFrame()
+         saida['predict'] = df_log['predict_pct']
+         
+         flag_cond = (df_log['Open']==df_log['entrada']) & (df_log['High']>df_log['predict'].shift(1))
+         
+         saida['predict'] = df_log['predict'].shift(1)
+         saida['predict'] = saida[flag_cond == True]['predict']
+         saida['close'] = df_log[flag_cond == False]['Close']
+         df_log['saida'] = saida['predict'].fillna(0) + saida['close'].fillna(0)
+
          #calculando lucro
          df_log['profit'] = (df_log['saida']/df_log['entrada'])-1
          df_log['profit'] = df_log['profit'].fillna(0)
          profit_day = df_log['profit'].mean()
          profit_month = ((1+profit_day) ** 20) -1
-         
+
          #calculando assertividade da subida
          df_log['sucesso'] = (df_log['profit']>0) | (df_log['entrada'].isnull())
          df_log['subida'] = df_log[df_log['entrada'].notnull()]['profit']>0
@@ -209,9 +217,9 @@ def run_statistics(tickerlist, ganho_min=0.005, gap=0.995):
 # In[ ]:
 
 tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "JPYEUR=X", "BTC-USD", 
-         "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
+           "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 run_arima_coach(tickers, days_force_update=1)
 run_statistics(tickers)
 
 # In[]:
-    
+    ticker = "PETR4.SA"
