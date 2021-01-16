@@ -26,7 +26,7 @@ warnings.filterwarnings('ignore')
 def get_finance_data(ticker, period='5y', interval='1d'):
     tkr = yf.Ticker(ticker)
     df = tkr.history(period=period, interval=interval)
-    return df.dropna(subset=['Low'])
+    return df.dropna(subset=['Close'])
 
 def test_unit_root(s):
     adf = adfuller(s)
@@ -119,11 +119,11 @@ def run_arima_coach(yticker_list, days_force_update=0):
     
 def do_arima_forecast(yticker):
     
-    #yticker = "PETR4.SA" #apagar
+    #yticker = "BTC-USD" #apagar
     arima_order = get_arima_data(yticker)
     if arima_order:
         df_log = get_finance_data(yticker)
-        df_log = df_log['Low']
+        df_log = df_log.dropna()['Close']
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         model_fit = model.fit()
         return model_fit.fittedvalues
@@ -138,7 +138,7 @@ def get_next_value(yticker):
     arima_order = get_arima_data(yticker)
     if arima_order:
         df_log = get_finance_data(yticker)
-        df_log = df_log['Low']
+        df_log =  df_log.dropna()['Close']
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         model_fit = model.fit()
         return model_fit.forecast()[0]
@@ -147,19 +147,18 @@ def get_next_value(yticker):
 
 # In[ ]:
 
-teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA","OIBR3.SA","PETR4.SA"]
+teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "JPYEUR=X", "BTC-USD", 
+         "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 run_arima_coach(teste, days_force_update=2)
 
 # In[ ]:
 
-
-    
-# In[]:
-
-ticker = "PETR4.SA" #apagar, uso somente para teste
-teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA"]
+#ticker = "VALE3.SA" #apagar, uso somente para teste
+teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "JPYEUR=X",
+         "BBAS3.SA", "ITUB3.SA","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 
 for ticker in teste:
+    print(ticker)
     predict = do_arima_forecast(ticker)
     df_log = get_finance_data(ticker)
     df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
@@ -190,6 +189,53 @@ for ticker in teste:
     profit_month = ((1+profit_day) ** 20) -1
 
     resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
-    print(ticker+"\nAcertos: "+str(resumo[True])+"%\nErros: "+str(resumo[False])+"%")
+    print("Acertos: "+str(resumo[True])+"%\nErros: "+str(resumo[False])+"%")
+    print("Lucro médio diário:"+str(round(profit_day*100,2))+"%")
+    print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%\n")
+    
+# In[]:
+
+ticker = "PETR4.SA" #apagar, uso somente para teste
+teste = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA"]
+
+for ticker in teste:
+    predict = do_arima_forecast(ticker)
+    df_log = get_finance_data(ticker)
+    df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
+    df_log = df_log[1:-1]
+    df_log['predict']=predict
+    df_log['predict_pct'] = (predict/df_log['Close'])-1
+    df_log['actual_pct'] =  df_log['Close'].pct_change()
+
+    #captura entradas
+    entrada = pd.DataFrame()
+    entrada['predict'] = df_log['predict_pct']
+    entrada['predict'] = df_log[df_log['predict_pct']>0.005]['predict']*0.995
+    entrada['predict'] = entrada['predict'].shift(1)
+    entrada['open'] = df_log[entrada['predict'].notnull()]['Open']
+    df_log['entrada'] = entrada['predict'].combine(entrada['open'],min)
+
+    #captura saida
+    #saida = pd.DataFrame()
+    #saida['predict'] = df_log[df_log['predict_pct'].shift(1)>0.005]['Open']
+    #saida['predict'] = df_log[(df_log['predict'].shift(1)> df_log['High']) & (df_log['entrada'].notna())]['Close']
+    #saida['close'] = df_log[(df_log['predict'].shift(1)<=df_log['High']) & (df_log['entrada'].notna())]['predict']
+    df_log['saida'] = df_log[df_log['entrada'].notnull()]['Close']
+
+    #calculando lucro
+    df_log['profit_05'] = (df_log['saida']/df_log['entrada'])-1
+    df_log['profit_05'] = df_log['profit_05'].fillna(0)
+    df_log['sucesso'] = (df_log['profit_05']>0) | (df_log['entrada'].isnull())
+    profit_day = df_log['profit_05'].mean()
+    profit_month = ((1+profit_day) ** 20) -1
+    
+    #calculando assertividade da subida
+    df_log['subida'] = df_log[df_log['entrada'].notnull()]['profit_05']>0
+
+    resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
+    assertivo = ((df_log['subida'].value_counts(True))*100).round(2)
+    
+    print(ticker+"\nAcertos Decisão: "+str(resumo[True])+"%")
+    print("Acertos Subida: "+str(assertivo[True])+"%")
     print("Lucro médio diário:"+str(round(profit_day*100,2))+"%")
     print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%\n")
