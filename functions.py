@@ -36,7 +36,7 @@ def stationary_test(s, alpha=0.05):
     ADFTest(alpha=alpha).should_diff(s)[1],
     KPSSTest(alpha=alpha).should_diff(s)[1]
     ])
-    return tests.sum() == 1
+    return tests.sum() <= 1
                            
 def arima_forecast(s, next=1, p=5, d=1, q=0):
     '''
