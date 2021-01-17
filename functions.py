@@ -30,12 +30,13 @@ def get_finance_data(ticker, period='1y', interval='1d'):
 
 
 def stationary_test(s, alpha=0.05):
+    '''Retorna se serie é estacionaria'''
     tests = np.array([
     PPTest(alpha=alpha).should_diff(s)[1],
     ADFTest(alpha=alpha).should_diff(s)[1],
     KPSSTest(alpha=alpha).should_diff(s)[1]
     ])
-    return not tests.sum() >= 2
+    return tests.sum() == 1
                            
 def arima_forecast(s, next=1, p=5, d=1, q=0):
     '''
