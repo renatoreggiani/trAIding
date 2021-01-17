@@ -1,1 +1,290 @@
-{"teste": {"yticker": "teste"}, "RNDP11.SA": {"yticker": "RNDP11.SA", "ARIMA": {"parametros": [1, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "OIBR3.SA": {"yticker": "OIBR3.SA", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "VILG11.SA": {"yticker": "VILG11.SA", "ARIMA": {"parametros": [1, 0, 3, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "BBFI11B.SA": {"yticker": "BBFI11B.SA", "ARIMA": {"parametros": [1, 0, 4, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "PETR4.SA": {"yticker": "PETR4.SA", "ARIMA": {"parametros": [4, 0, 1, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "EUR=X": {"yticker": "EUR=X", "ARIMA": {"parametros": [1, 0, 1, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "JPYEUR=X": {"yticker": "JPYEUR=X", "ARIMA": {"parametros": [5, 0, 0, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "BTC-USD": {"yticker": "BTC-USD", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "VALE3.SA": {"yticker": "VALE3.SA", "ARIMA": {"parametros": [3, 0, 1, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "BBAS3.SA": {"yticker": "BBAS3.SA", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "ITUB3.SA": {"yticker": "ITUB3.SA", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "AAPL": {"yticker": "AAPL", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "GOOG": {"yticker": "GOOG", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "TSLA": {"yticker": "TSLA", "ARIMA": {"parametros": [1, 0, 4, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "^DJI": {"yticker": "^DJI", "ARIMA": {"parametros": [4, 0, 1, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "^GSPC": {"yticker": "^GSPC", "ARIMA": {"parametros": [4, 0, 1, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "GC=F": {"yticker": "GC=F", "ARIMA": {"parametros": [3, 0, 2, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "CL=F": {"yticker": "CL=F", "ARIMA": {"parametros": [1, 0, 1, 0, 0, 0, 0], "train_date": "2021-01-16"}}, "BZ=F": {"yticker": "BZ=F", "ARIMA": {"parametros": [1, 0, 0, 0, 0, 0, 0], "train_date": "2021-01-16"}}}
+{
+	"teste": {
+		"yticker": "teste"
+	},
+	"RNDP11.SA": {
+		"yticker": "RNDP11.SA",
+		"ARIMA": {
+			"parametros": [
+				0,
+				1,
+				2,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"OIBR3.SA": {
+		"yticker": "OIBR3.SA",
+		"ARIMA": {
+			"parametros": [
+				2,
+				1,
+				2,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"VILG11.SA": {
+		"yticker": "VILG11.SA",
+		"ARIMA": {
+			"parametros": [
+				3,
+				1,
+				2,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"BBFI11B.SA": {
+		"yticker": "BBFI11B.SA",
+		"ARIMA": {
+			"parametros": [
+				0,
+				1,
+				4,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"PETR4.SA": {
+		"yticker": "PETR4.SA",
+		"ARIMA": {
+			"parametros": [
+				3,
+				1,
+				1,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"EUR=X": {
+		"yticker": "EUR=X",
+		"ARIMA": {
+			"parametros": [
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"JPYEUR=X": {
+		"yticker": "JPYEUR=X",
+		"ARIMA": {
+			"parametros": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"BTC-USD": {
+		"yticker": "BTC-USD",
+		"ARIMA": {
+			"parametros": [
+				0,
+				2,
+				5,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"VALE3.SA": {
+		"yticker": "VALE3.SA",
+		"ARIMA": {
+			"parametros": [
+				2,
+				1,
+				3,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"BBAS3.SA": {
+		"yticker": "BBAS3.SA",
+		"ARIMA": {
+			"parametros": [
+				2,
+				1,
+				3,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"ITUB3.SA": {
+		"yticker": "ITUB3.SA",
+		"ARIMA": {
+			"parametros": [
+				4,
+				1,
+				1,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"AAPL": {
+		"yticker": "AAPL",
+		"ARIMA": {
+			"parametros": [
+				5,
+				2,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"GOOG": {
+		"yticker": "GOOG",
+		"ARIMA": {
+			"parametros": [
+				3,
+				1,
+				2,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"TSLA": {
+		"yticker": "TSLA",
+		"ARIMA": {
+			"parametros": [
+				0,
+				2,
+				4,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"^DJI": {
+		"yticker": "^DJI",
+		"ARIMA": {
+			"parametros": [
+				3,
+				1,
+				2,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"^GSPC": {
+		"yticker": "^GSPC",
+		"ARIMA": {
+			"parametros": [
+				3,
+				1,
+				2,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"GC=F": {
+		"yticker": "GC=F",
+		"ARIMA": {
+			"parametros": [
+				2,
+				1,
+				3,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"CL=F": {
+		"yticker": "CL=F",
+		"ARIMA": {
+			"parametros": [
+				2,
+				1,
+				3,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	},
+	"BZ=F": {
+		"yticker": "BZ=F",
+		"ARIMA": {
+			"parametros": [
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				0
+			],
+			"train_date": "2021-01-17"
+		}
+	}
+}

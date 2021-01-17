@@ -37,7 +37,7 @@ def stationary_test(s):
     return not adf_test.should_diff(s)[1]
 
 def get_arima_model(s, is_seasonal=False):
-    is_stat = test_unit_root(s)
+    is_stat = not test_unit_root(s)
     arima_model = auto_arima(s, stationary=is_stat, start_p=0, start_d=0, start_q=0, max_p=10, max_d=10, max_q=10, start_P=0, start_D=0, 
                              start_Q=0, max_P=15, max_D=15, max_Q=15, m=15, seasonal=is_seasonal, error_action='warn', trace=True, 
                              suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
@@ -59,7 +59,7 @@ def get_arima_data(yticker):
     
 def run_arima_coach(yticker_list, days_force_update=0):
 
-    n_steps = 2
+    #n_steps = 2
     must_run = False
     hoje = datetime.datetime.now().strftime("%Y-%m-%d")
     
@@ -92,7 +92,8 @@ def run_arima_coach(yticker_list, days_force_update=0):
                     print("capturando dados do yFinance: "+yticker)
                     data = get_finance_data(yticker)
                     data.dropna(subset=['Close'], inplace=True)
-                    train = data['Close'][:len(data)-n_steps+1]
+                    #train = data['Close'][:len(data)-n_steps+1]
+                    train = data['Close']
                     jdata[ticker]={}
                     jdata[ticker].update({"yticker":yticker})
                     jfile.seek(0)
@@ -132,9 +133,13 @@ def do_arima_forecast(yticker):
             print(e)
             print("\n")
             return False 
-        return model_fit.fittedvalues
+        return model_fit.forecast()[0]
     else:
         return False
+
+# In[21]:
+
+    
 
 # In[]:
     
@@ -153,8 +158,9 @@ def get_next_value(yticker):
 
 # In[]:
 
-def run_statistics(tickerlist, ganho_min=0.005, gap=0.995):
-    for ticker in tickerlist:
+ticker = "PETR4.SA"
+def run_statistics(tickers, ganho_min=0.005, gap=0.995):
+    for ticker in tickers:
          print(ticker)
          predict = do_arima_forecast(ticker)
          if isinstance(predict, bool):
@@ -163,7 +169,10 @@ def run_statistics(tickerlist, ganho_min=0.005, gap=0.995):
          df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
          df_log = df_log[1:-1]
          df_log['predict']=predict
-         df_log['predict_pct'] = (predict/df_log['Close'])-1
+         df_log['predict_pct'] = (df_log['predict']/df_log['Close'])-1
+         
+         ganho_min = df_log.Close.pct_change()[1:].describe()['50%']
+         gap = 1-ganho_min
     
          #captura entradas
          entrada = pd.DataFrame()
@@ -209,7 +218,8 @@ def run_statistics(tickerlist, ganho_min=0.005, gap=0.995):
 
 # In[ ]:
 
-tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "JPYEUR=X", "BTC-USD", 
+#JPYEUR=X com provavel erro nos dados do YFinance
+tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", 
          "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 run_arima_coach(tickers, days_force_update=1)
 run_statistics(tickers)
