@@ -30,10 +30,6 @@ def get_finance_data(ticker, period='1y', interval='1d'):
     return df
 
 
-def test_unit_root(s):
-    adf = adfuller(s)
-    return adf[0] > adf[4]['1%']
-
 def stationary_test(s, alpha=0.05):
     tests = np.array([
     PPTest(alpha=alpha).should_diff(s)[1],
