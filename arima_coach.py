@@ -11,6 +11,9 @@ import os
 import json
 import datetime
 
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+
 from pmdarima.arima import ADFTest
 from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.stattools import adfuller
@@ -128,7 +131,7 @@ def do_arima_forecast(yticker):
         df_log = df_log.dropna()['Close']
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         try:    
-            model_fit = model.fit()
+            model_fit = model.fit(disp=0)
         except Exception as e: 
             print(e)
             print("\n")
@@ -139,7 +142,44 @@ def do_arima_forecast(yticker):
 
 # In[21]:
 
-    
+ticker = "VILG11.SA"
+def test_arima(tickers): 
+    for ticker in tickers:
+        #load dataframe
+        series = get_finance_data(ticker)
+        series = series.dropna()['Close']
+        series = series[-100:]
+
+        # split into train and test sets
+        X = series.values
+        size = int(len(X) * 0.66)
+        train, test = X[0:size], X[size:len(X)]
+        history = [x for x in train]
+        predictions = list()
+
+        #get arima params
+        arima_order = get_arima_data(ticker)
+
+        # walk-forward validation
+        for t in range(len(test)):
+        	model = ARIMA(history, order=(arima_order[0],arima_order[1],arima_order[2]))
+        	model_fit = model.fit(disp=0,transparams=False)
+        	output = model_fit.forecast()
+        	yhat = output[0]
+        	predictions.append(yhat)
+        	obs = test[t]
+        	history.append(obs)
+
+        # evaluate forecasts
+        rmse = sqrt(mean_squared_error(test, predictions))
+        print('Teste RMSE para '+ticker+': %.3f' % rmse)
+        with open('dataframes/^^resumo.json','r+') as jfile:
+            jdata = json.load(jfile)
+            jdata[ticker]={}
+            jdata[ticker].update({"RMSE":str(rmse)})
+            jfile.seek(0)
+            json.dump(jdata, jfile)  
+
 
 # In[]:
     
@@ -222,7 +262,8 @@ def run_statistics(tickers, ganho_min=0.005, gap=0.995):
 tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", 
          "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 run_arima_coach(tickers, days_force_update=1)
-run_statistics(tickers)
+#run_statistics(tickers)
+test_arima(tickers)
 
 # In[]:
     
