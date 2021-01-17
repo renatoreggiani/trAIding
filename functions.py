@@ -34,9 +34,13 @@ def test_unit_root(s):
     adf = adfuller(s)
     return adf[0] > adf[4]['1%']
 
-def stationary_test(s):
-    adf_test = ADFTest(alpha=0.01)
-    return not adf_test.should_diff(s)[1]
+def stationary_test(s, alpha=0.05):
+    tests = np.array([
+    PPTest(alpha=alpha).should_diff(s)[1],
+    ADFTest(alpha=alpha).should_diff(s)[1],
+    KPSSTest(alpha=alpha).should_diff(s)[1]
+    ])
+    return not tests.sum() >= 2
                            
 def arima_forecast(s, next=1, p=5, d=1, q=0):
     '''
