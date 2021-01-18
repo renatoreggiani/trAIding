@@ -77,7 +77,7 @@ def run_arima_coach(yticker_list, days_force_update=0):
                 if (ticker in jdata.keys()):
                     print("Dados de "+ticker+" já existentes.")
                     if ("ARIMA" in jdata[ticker]):
-                        print("Dados atualizados em "+jdata[ticker]["ARIMA"]["train_date"])
+                        print("Dados atualizados em "+jdata[ticker]["ARIMA"]["train_date"]+"\n")
                         if ("train_date" in jdata[ticker]["ARIMA"]):
                             if (days_force_update > 0):
                                 train_date = datetime.datetime.strptime(jdata[ticker]["ARIMA"]["train_date"], '%Y-%m-%d')
@@ -106,6 +106,7 @@ def run_arima_coach(yticker_list, days_force_update=0):
         if "ARIMA" not in jdata[ticker]:
             print("rodando auto arima para "+ticker)
             arima_model = get_arima_model(train)
+            print("-----------------")
             my_arima.append(arima_model.order[0])
             my_arima.append(arima_model.order[1])
             my_arima.append(arima_model.order[2])
@@ -142,44 +143,41 @@ def do_arima_forecast(yticker):
 
 # In[21]:
 
-ticker = "VILG11.SA"
-def test_arima(tickers): 
-    for ticker in tickers:
-        #load dataframe
-        series = get_finance_data(ticker)
-        series = series.dropna()['Close']
-        series = series[-100:]
+ticker = "RNDP11.SA"
+df = get_finance_data(ticker)
+df = df.dropna()['Close']    
+def predict_values(df, ticker): 
+    #load dataframe
 
-        # split into train and test sets
-        X = series.values
-        size = int(len(X) * 0.66)
-        train, test = X[0:size], X[size:len(X)]
-        history = [x for x in train]
-        predictions = list()
 
-        #get arima params
-        arima_order = get_arima_data(ticker)
+    # split into train and test sets
+    X = df.values
+    train, test = X[0:-252], X[-252:]
+    history = [x for x in train]
+    predictions = list()
 
-        # walk-forward validation
+    #get arima params
+    arima_order = get_arima_data(ticker)
+    print("modelo lido: ("+str(arima_order[0])+","+str(arima_order[1])+","+str(arima_order[2])+")")
+    print("rodando backtest")
+
+    # walk-forward validation
+    try:
         for t in range(len(test)):
         	model = ARIMA(history, order=(arima_order[0],arima_order[1],arima_order[2]))
-        	model_fit = model.fit(disp=0,transparams=False)
+        	model_fit = model.fit(disp=0)
         	output = model_fit.forecast()
-        	yhat = output[0]
+        	yhat = output[0][0]
         	predictions.append(yhat)
         	obs = test[t]
         	history.append(obs)
-
-        # evaluate forecasts
-        rmse = sqrt(mean_squared_error(test, predictions))
-        print('Teste RMSE para '+ticker+': %.3f' % rmse)
-        with open('dataframes/^^resumo.json','r+') as jfile:
-            jdata = json.load(jfile)
-            jdata[ticker]={}
-            jdata[ticker].update({"RMSE":str(rmse)})
-            jfile.seek(0)
-            json.dump(jdata, jfile)  
-
+        	#print('predicted=%f, observed=%f' % (yhat, obs))
+            
+        return predictions
+    except Exception as e: 
+        print(e)
+        print("\n")
+        return False  
 
 # In[]:
     
@@ -199,15 +197,20 @@ def get_next_value(yticker):
 # In[]:
 
 ticker = "PETR4.SA"
-def run_statistics(tickers, ganho_min=0.005, gap=0.995):
+def run_statistics(tickers):
     for ticker in tickers:
          print(ticker)
-         predict = do_arima_forecast(ticker)
-         if isinstance(predict, bool):
-             continue
+         #predict = do_arima_forecast(ticker)
+         #if isinstance(predict, bool):
+         #    continue
          df_log = get_finance_data(ticker)
          df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
          df_log = df_log[1:-1]
+         predict = predict_values(df_log['Close'],ticker)
+         if isinstance(predict, bool):
+             continue
+         df_log = df_log[-len(predict):]
+         #colocar o predict no lugar certo do df
          df_log['predict']=predict
          df_log['predict_pct'] = (df_log['predict']/df_log['Close'])-1
          
@@ -218,6 +221,7 @@ def run_statistics(tickers, ganho_min=0.005, gap=0.995):
          entrada = pd.DataFrame()
          entrada['predict'] = df_log['predict_pct']
          entrada['predict'] = df_log[df_log['predict_pct']>ganho_min]['predict']*gap
+         #ATENCAO:  REVER DESLOCAMENTO DO PREDICT!
          entrada['predict'] = entrada['predict'].shift(1)
          entrada['open'] = df_log[entrada['predict'].notnull()]['Open']
          df_log['entrada'] = entrada['predict'].combine(entrada['open'],min)
@@ -233,37 +237,47 @@ def run_statistics(tickers, ganho_min=0.005, gap=0.995):
          
          #calculando assertividade da subida
          df_log['sucesso'] = (df_log['profit']>0) | (df_log['entrada'].isnull())
+         #ATENCAO:  REVER ACERTO DE SUBIDAS!
          df_log['subida'] = df_log[df_log['entrada'].notnull()]['profit']>0
          df_log.to_csv("dataframes/"+ticker+".csv",sep=";",decimal=",")
     
-         resumo = ((df_log['sucesso'].value_counts(True))*100).round(2)
+         lucro_opera = df_log['profit'].sum()
+         varia_papel = df_log['Close'][len(df_log['Close'])-1]/df_log['Close'][0]-1
+         sucesso = ((df_log['sucesso'].value_counts(True))*100).round(2)
          assertivo = ((df_log['subida'].value_counts(True))*100).round(2)
+         rmse = sqrt(mean_squared_error(df_log['Close'], df_log['predict']))
          
          with open('dataframes/^^resumo.json','r+') as jfile:
              jdata = json.load(jfile)
              jdata[ticker]={}
              jdata[ticker].update({"Ganho pra acionamento":str(ganho_min),
                                    "Gap de desconto":str(gap),
-                                   "Acertos Decisao":str(resumo[True]),
+                                   "Acertos Decisao":str(sucesso[True]),
                                    "Acertos Subida":str(assertivo[True]),
+                                   "Variação do Papel":str(round(varia_papel*100,2)),
+                                   "Lucro das operações":str(round(lucro_opera*100,2)),
                                    "Lucro medio diario":str(round(profit_day*100,2)),
-                                   "Lucro medio mensal":str(round(profit_month*100,2))})
+                                   "Lucro medio mensal":str(round(profit_month*100,2)),
+                                   "RMSE":str(round(rmse*100,2))})
              jfile.seek(0)
              json.dump(jdata, jfile)
     
-         print("Acertos Decisão: "+str(resumo[True])+"%")
+         print("Acertos Decisão: "+str(sucesso[True])+"%")
          print("Acertos Subida: "+str(assertivo[True])+"%")
+         print("Variação do Papel: "+str(round(varia_papel*100,2))+"%")
+         print("Lucro das operações: "+str(round(lucro_opera*100,2))+"%")
          print("Lucro médio diário:"+str(round(profit_day*100,2))+"%")
-         print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%\n")
+         print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%")
+         print("Erro médio quadrático: "+str(round(rmse,2))+"%\n")
+
 
 # In[ ]:
 
 #JPYEUR=X com provavel erro nos dados do YFinance
 tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", 
          "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
-run_arima_coach(tickers, days_force_update=1)
-#run_statistics(tickers)
-test_arima(tickers)
+run_arima_coach(tickers, days_force_update=0)
+run_statistics(tickers)
 
 # In[]:
-    
+
