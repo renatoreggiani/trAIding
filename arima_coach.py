@@ -58,7 +58,7 @@ def get_arima_data(yticker):
                     print("Data for "+yticker+" not found")
     return data_return
 
-# In[20]:
+# In[3]:
     
 def run_arima_coach(yticker_list, days_force_update=0):
 
@@ -105,7 +105,7 @@ def run_arima_coach(yticker_list, days_force_update=0):
         my_arima = []
         if "ARIMA" not in jdata[ticker]:
             print("rodando auto arima para "+ticker)
-            arima_model = get_arima_model(train)
+            arima_model = get_arima_model(train[:-252])
             print("-----------------")
             my_arima.append(arima_model.order[0])
             my_arima.append(arima_model.order[1])
@@ -121,7 +121,7 @@ def run_arima_coach(yticker_list, days_force_update=0):
         
         jfile.close()
         
-# In[21]:
+# In[4]:
     
 def do_arima_forecast(yticker):
     
@@ -141,21 +141,18 @@ def do_arima_forecast(yticker):
     else:
         return False
 
-# In[21]:
+# In[5]:
 
-ticker = "RNDP11.SA"
+ticker = "OIBR3.SA"
 df = get_finance_data(ticker)
 df = df.dropna()['Close']    
 def predict_values(df, ticker): 
     #load dataframe
-
-
     # split into train and test sets
     X = df.values
     train, test = X[0:-252], X[-252:]
-    history = [x for x in train]
-    predictions = list()
-
+    history = train.tolist()
+    predictions = []
     #get arima params
     arima_order = get_arima_data(ticker)
     print("modelo lido: ("+str(arima_order[0])+","+str(arima_order[1])+","+str(arima_order[2])+")")
@@ -179,7 +176,7 @@ def predict_values(df, ticker):
         print("\n")
         return False  
 
-# In[]:
+# In[6]:
     
 def get_next_value(yticker):
 
@@ -194,9 +191,8 @@ def get_next_value(yticker):
     else:
         return False
 
-# In[]:
+# In[7]:
 
-ticker = "PETR4.SA"
 def run_statistics(tickers):
     for ticker in tickers:
          print(ticker)
@@ -271,11 +267,11 @@ def run_statistics(tickers):
          print("Erro médio quadrático: "+str(round(rmse,2))+"%\n")
 
 
-# In[ ]:
+# In[8]:
 
 #JPYEUR=X com provavel erro nos dados do YFinance
 tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", 
-         "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
+          "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F"]
 run_arima_coach(tickers, days_force_update=0)
 run_statistics(tickers)
 
