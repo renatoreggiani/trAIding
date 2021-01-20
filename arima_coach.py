@@ -188,8 +188,8 @@ def run_statistics(tickers):
          #    continue
          df_log = get_finance_data(ticker)
          df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
-         df_log = df_log[1:-1]
-         predict = predict_values(df_log['Close'],ticker)
+         df_log = df_log[1:-1].dropna(subset=['Close'])
+         predict = predict_values(df_log['Close'], ticker)
          if isinstance(predict, bool):
              continue
          df_log = df_log[-len(predict):]
@@ -257,10 +257,11 @@ def run_statistics(tickers):
 # In[8]:
 
 #JPYEUR=X com provavel erro nos dados do YFinance
-tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", ]
+tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD","IAU" ]
          # "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 run_arima_coach(tickers, days_force_update=0)
 run_statistics(tickers)
 
 # In[]:
+
 
