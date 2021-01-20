@@ -8,10 +8,11 @@ import yfinance as yf
 from pmdarima.arima import ADFTest, CHTest, KPSSTest, PPTest
 from statsmodels.tsa.arima_model import ARIMA
 from pmdarima.arima import auto_arima
+import numpy as np
 
 
 
-def get_finance_data(ticker, period='1y', interval='1d'):
+def get_finance_data(ticker, period='10y', interval='1d'):
     '''
     Função para capturar os dados dos ativos, acrescentar ".SA" no final do ticker para ativos 
     negociados na Bovespa, exemplo "PETR4.SA".

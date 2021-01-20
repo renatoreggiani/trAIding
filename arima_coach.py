@@ -5,7 +5,7 @@
     
 import yfinance as yf
 import pandas as pd
-#import numpy as np
+import numpy as np
 import matplotlib.pyplot as plt 
 import os
 import json
@@ -24,23 +24,12 @@ plt.style.use('fivethirtyeight')
 import warnings
 warnings.filterwarnings('ignore')
 
+from functions import get_finance_data, stationary_test
+
 # In[2]:
     
-def get_finance_data(ticker, period='5y', interval='1d'):
-    tkr = yf.Ticker(ticker)
-    df = tkr.history(period=period, interval=interval)
-    return df.dropna(subset=['Close'])
-
-def test_unit_root(s):
-    adf = adfuller(s)
-    return adf[0] > adf[4]['1%']
-
-def stationary_test(s):
-    adf_test = ADFTest(alpha=0.01)
-    return not adf_test.should_diff(s)[1]
-
 def get_arima_model(s, is_seasonal=False):
-    is_stat = not test_unit_root(s)
+    is_stat = stationary_test(s)
     arima_model = auto_arima(s, stationary=is_stat, start_p=0, start_d=0, start_q=0, max_p=10, max_d=10, max_q=10, start_P=0, start_D=0, 
                              start_Q=0, max_P=15, max_D=15, max_Q=15, m=15, seasonal=is_seasonal, error_action='warn', trace=True, 
                              suppress_warnings=True, stepwise=False, random_state=20, n_fits=50, n_jobs=-1)
@@ -105,7 +94,7 @@ def run_arima_coach(yticker_list, days_force_update=0):
         my_arima = []
         if "ARIMA" not in jdata[ticker]:
             print("rodando auto arima para "+ticker)
-            arima_model = get_arima_model(train[:-252])
+            arima_model = get_arima_model(train)
             print("-----------------")
             my_arima.append(arima_model.order[0])
             my_arima.append(arima_model.order[1])
@@ -123,12 +112,11 @@ def run_arima_coach(yticker_list, days_force_update=0):
         
 # In[4]:
     
-def do_arima_forecast(yticker):
+def do_arima_forecast(ticker):
     
-    #yticker = "BTC-USD" #apagar
-    arima_order = get_arima_data(yticker)
+    arima_order = get_arima_data(ticker)
     if arima_order:
-        df_log = get_finance_data(yticker)
+        df_log = get_finance_data(ticker)
         df_log = df_log.dropna()['Close']
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         try:    
@@ -143,7 +131,7 @@ def do_arima_forecast(yticker):
 
 # In[5]:
 
-ticker = "OIBR3.SA"
+ticker = "PETR3.SA"
 df = get_finance_data(ticker)
 df = df.dropna()['Close']    
 def predict_values(df, ticker): 
@@ -178,12 +166,11 @@ def predict_values(df, ticker):
 
 # In[6]:
     
-def get_next_value(yticker):
+def get_next_value(ticker):
 
-    #yticker = "PETR4.SA" #apagar
-    arima_order = get_arima_data(yticker)
+    arima_order = get_arima_data(ticker)
     if arima_order:
-        df_log = get_finance_data(yticker)
+        df_log = get_finance_data(ticker)
         df_log =  df_log.dropna()['Close']
         model = ARIMA(df_log, order=(arima_order[0],arima_order[1],arima_order[2]))
         model_fit = model.fit()
@@ -270,8 +257,8 @@ def run_statistics(tickers):
 # In[8]:
 
 #JPYEUR=X com provavel erro nos dados do YFinance
-tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", 
-          "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F"]
+tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD", ]
+         # "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
 run_arima_coach(tickers, days_force_update=0)
 run_statistics(tickers)
 
