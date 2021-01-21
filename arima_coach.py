@@ -38,7 +38,7 @@ def get_arima_model(s, is_seasonal=False):
 def get_arima_data(yticker):
     data_return = ''
     if os.path.isfile("files/db.json"):
-        with open('files/db.json','r+') as jfile:
+        with open('files/db.json','r') as jfile:
             jdata = json.load(jfile)
             if (yticker in jdata.keys()):
                 if ("ARIMA" in jdata[yticker]):
@@ -57,59 +57,49 @@ def run_arima_coach(yticker_list, days_force_update=0):
     
     if not os.path.isdir("files"):
         os.mkdir("files")
-    
+    try:
+        with open('files/db.json','r') as jfile:
+            jdata = json.load(jfile)
+    except:
+        jdata = {}
+            
     for yticker in yticker_list:
         ticker = yticker
-        if os.path.isfile("files/db.json"):
-            with open('files/db.json','r+') as jfile:
-                jdata = json.load(jfile)
-                if (ticker in jdata.keys()):
-                    print("Dados de "+ticker+" já existentes.")
-                    if ("ARIMA" in jdata[ticker]):
-                        print("Dados atualizados em "+jdata[ticker]["ARIMA"]["train_date"]+"\n")
-                        if ("train_date" in jdata[ticker]["ARIMA"]):
-                            if (days_force_update > 0):
-                                train_date = datetime.datetime.strptime(jdata[ticker]["ARIMA"]["train_date"], '%Y-%m-%d')
-                                must_run = ((datetime.datetime.now() - train_date).days) > days_force_update
-                            else:
-                                must_run = True
-                        else:
-                            must_run = True
+        if (ticker in jdata.keys()):
+            print("Dados de "+ticker+" já existentes.")
+            if ("ARIMA" in jdata[ticker]):
+                print("Dados atualizados em "+jdata[ticker]["ARIMA"]["train_date"]+"\n")
+                if ("train_date" in jdata[ticker]["ARIMA"]):
+                    if (days_force_update > 0):
+                        train_date = datetime.datetime.strptime(jdata[ticker]["ARIMA"]["train_date"], '%Y-%m-%d')
+                        must_run = ((datetime.datetime.now() - train_date).days) > days_force_update
                     else:
                         must_run = True
                 else:
-                    print("ticker "+ticker+" não encontrado")
                     must_run = True
-                if must_run:
-                    print("capturando dados do yFinance: "+yticker)
-                    data = get_finance_data(yticker)
-                    data.dropna(subset=['Close'], inplace=True)
-                    #train = data['Close'][:len(data)-n_steps+1]
-                    train = data['Close']
-                    jdata[ticker]={}
-                    jdata[ticker].update({"yticker":yticker})
-                    jfile.seek(0)
-                    json.dump(jdata, jfile)
+            else:
+                must_run = True
+        else:
+            print("ticker "+ticker+" não encontrado")
+            must_run = True
+        if must_run:
+            print("capturando dados do yFinance: "+yticker)
+            data = get_finance_data(yticker)
+            data.dropna(subset=['Close'], inplace=True)
+            #train = data['Close'][:len(data)-n_steps+1]
+            train = data['Close']
+            jdata[ticker]={}
+            jdata[ticker].update({"yticker":yticker})
                     
-        my_arima = []
         if "ARIMA" not in jdata[ticker]:
             print("rodando auto arima para "+ticker)
             arima_model = get_arima_model(train)
             print("-----------------")
-            my_arima.append(arima_model.order[0])
-            my_arima.append(arima_model.order[1])
-            my_arima.append(arima_model.order[2])
-            my_arima.append(arima_model.seasonal_order[0])
-            my_arima.append(arima_model.seasonal_order[1])
-            my_arima.append(arima_model.seasonal_order[2])
-            my_arima.append(arima_model.seasonal_order[3])
-            with open('files/db.json','r+') as jfile:
-                jdata[ticker].update({"ARIMA":{"parametros":my_arima,"train_date":hoje}})
-                jfile.seek(0)
-                json.dump(jdata, jfile)
+                    
+            jdata[ticker].update({"ARIMA":{"parametros":arima_model.order + arima_model.seasonal_order,"train_date":hoje}})
         
-        jfile.close()
-        
+    json.dump(jdata, open('files/db.json','w'), indent=4)
+
 # In[4]:
     
 def do_arima_forecast(ticker):
@@ -135,10 +125,9 @@ ticker = "PETR3.SA"
 df = get_finance_data(ticker)
 df = df.dropna()['Close']    
 def predict_values(df, ticker): 
-    #load dataframe
     # split into train and test sets
     X = df.values
-    train, test = X[0:-252], X[-252:]
+    train, test = X[0:-52], X[-52:]
     history = train.tolist()
     predictions = []
     #get arima params
@@ -181,17 +170,19 @@ def get_next_value(ticker):
 # In[7]:
 
 def run_statistics(tickers):
+    with open('dataframes/^^resumo.json','r+') as jfile:
+        try:
+            jdata = json.load(jfile)
+        except:
+            jdata = {}
+    
     for ticker in tickers:
          print(ticker)
          #predict = do_arima_forecast(ticker)
-         #if isinstance(predict, bool):
-         #    continue
          df_log = get_finance_data(ticker)
          df_log = df_log.drop(columns=['Dividends','Stock Splits','Volume'])
          df_log = df_log[1:-1].dropna(subset=['Close'])
          predict = predict_values(df_log['Close'], ticker)
-         if isinstance(predict, bool):
-             continue
          df_log = df_log[-len(predict):]
          #colocar o predict no lugar certo do df
          df_log['predict']=predict
@@ -230,20 +221,24 @@ def run_statistics(tickers):
          assertivo = ((df_log['subida'].value_counts(True))*100).round(2)
          rmse = sqrt(mean_squared_error(df_log['Close'], df_log['predict']))
          
-         with open('dataframes/^^resumo.json','r+') as jfile:
-             jdata = json.load(jfile)
-             jdata[ticker]={}
-             jdata[ticker].update({"Ganho pra acionamento":str(ganho_min),
-                                   "Gap de desconto":str(gap),
-                                   "Acertos Decisao":str(sucesso[True]),
-                                   "Acertos Subida":str(assertivo[True]),
-                                   "Variação do Papel":str(round(varia_papel*100,2)),
-                                   "Lucro das operações":str(round(lucro_opera*100,2)),
-                                   "Lucro medio diario":str(round(profit_day*100,2)),
-                                   "Lucro medio mensal":str(round(profit_month*100,2)),
-                                   "RMSE":str(round(rmse*100,2))})
-             jfile.seek(0)
-             json.dump(jdata, jfile)
+         # with open('dataframes/^^resumo.json','r+') as jfile:
+         #     try:
+         #         jdata = json.load(jfile)
+         #     except:
+         #         jdata = {}
+         #     jdata[ticker]={}
+         jdata[ticker]={}
+         jdata[ticker].update({"Ganho pra acionamento":str(ganho_min),
+                               "Gap de desconto":str(gap),
+                                "Acertos Decisao":str(sucesso[True]),
+                                "Acertos Subida":str(assertivo[True]),
+                                "Variação do Papel":str(round(varia_papel*100,2)),
+                                "Lucro das operações":str(round(lucro_opera*100,2)),
+                                "Lucro medio diario":str(round(profit_day*100,2)),
+                                "Lucro medio mensal":str(round(profit_month*100,2)),
+                                "RMSE":str(round(rmse*100,2))})
+             # jfile.seek(0)
+             # json.dump(jdata, jfile)
     
          print("Acertos Decisão: "+str(sucesso[True])+"%")
          print("Acertos Subida: "+str(assertivo[True])+"%")
@@ -252,16 +247,17 @@ def run_statistics(tickers):
          print("Lucro médio diário:"+str(round(profit_day*100,2))+"%")
          print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%")
          print("Erro médio quadrático: "+str(round(rmse,2))+"%\n")
-
+    json.dump(jdata, jfile)
 
 # In[8]:
 
 #JPYEUR=X com provavel erro nos dados do YFinance
-tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA","BBFI11B.SA", "PETR4.SA", "EUR=X", "BTC-USD","IAU" ]
+tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA", "PETR4.SA", "EUR=X", "BTC-USD","IAU" ]
          # "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
-run_arima_coach(tickers, days_force_update=0)
+run_arima_coach(tickers, days_force_update=10)
 run_statistics(tickers)
 
 # In[]:
-
-
+with open('dataframes/^^resumo.json','r') as jfile:
+    jdata = json.load(jfile)
+json.dump(jdata, open('dataframes/^^resumo.json', 'w'),  indent=4)
