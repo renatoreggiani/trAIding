@@ -3,7 +3,7 @@
 
 # In[1]:
     
-import yfinance as yf
+# import yfinance as yf
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -14,9 +14,9 @@ import datetime
 from sklearn.metrics import mean_squared_error
 from math import sqrt
 
-from pmdarima.arima import ADFTest
+# from pmdarima.arima import ADFTest
 from statsmodels.tsa.arima_model import ARIMA
-from statsmodels.tsa.stattools import adfuller
+# from statsmodels.tsa.stattools import adfuller
 from pmdarima.arima import auto_arima
 
 plt.style.use('fivethirtyeight')
@@ -247,7 +247,7 @@ def run_statistics(tickers):
          print("Lucro médio diário:"+str(round(profit_day*100,2))+"%")
          print("Lucro médio mensal:"+str(round(profit_month*100,2))+"%")
          print("Erro médio quadrático: "+str(round(rmse,2))+"%\n")
-    json.dump(jdata, jfile)
+    json.dump(jdata, open('dataframes/^^resumo.json','w'), indent=4)
 
 # In[8]:
 

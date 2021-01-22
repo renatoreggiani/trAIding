@@ -1,22 +1,79 @@
-{"OIBR3.SA": {"Ganho pra acionamento": "0.0", "Gap de desconto": "1.0", "Acertos Decisao": "77.38", "Acertos Subida": "51.28", "Varia\u00e7\u00e3o do Papel": "169.32", "Lucro das opera\u00e7\u00f5es": "101.26", "Lucro medio diario": "0.4", "Lucro medio mensal": "8.35", "RMSE": "6.75"}, "RNDP11.SA": {"Ganho pra acionamento": "0.0", "Gap de desconto": "1.0", "Acertos Decisao": "75.0", "Acertos Subida": "42.73", "Varia\u00e7\u00e3o do Papel": "-23.12", "Lucro das opera\u00e7\u00f5es": "61.75", "Lucro medio diario": "0.25", "Lucro medio mensal": "5.02", "RMSE": "1818.51"}, "VILG11.SA": {"Ganho pra acionamento": "0.0003275809952290043", "Gap de desconto": "0.999672419004771", "Acertos Decisao": "73.02", "Acertos Subida": "44.72", "Varia\u00e7\u00e3o do Papel": "-15.64", "Lucro das opera\u00e7\u00f5es": "-48.41", "Lucro medio diario": "-0.19", "Lucro medio mensal": "-3.77", "RMSE": "265.14"}, "BBFI11B.SA": {"Ganho pra acionamento": "0.00047014353266261466", "Gap de desconto": "0.9995298564673374", "Acertos Decisao": "78.97", "Acertos Subida": "51.38", "Varia\u00e7\u00e3o do Papel": "-29.0", "Lucro das opera\u00e7\u00f5es": "-30.33", "Lucro medio diario": "-0.12", "Lucro medio mensal": "-2.38", "RMSE": "5603.63"}, "PETR4.SA": {"Ganho pra acionamento": "0.0011441909775424808", "Gap de desconto": "0.9988558090224575", "Acertos Decisao": "76.98", "Acertos Subida": "52.85", "Varia\u00e7\u00e3o do Papel": "-7.26", "Lucro das opera\u00e7\u00f5es": "29.01", "Lucro medio diario": "0.12", "Lucro medio mensal": "2.33", "RMSE": "87.76"}, "EUR=X": {"Ganho pra acionamento": "-0.0003557716151225687", "Gap de desconto": "1.0003557716151226", "Acertos Decisao": "69.84", "Acertos Subida": "46.48", "Varia\u00e7\u00e3o do Papel": "-8.18", "Lucro das opera\u00e7\u00f5es": "7.56", "Lucro medio diario": "0.03", "Lucro medio mensal": "0.6", "RMSE": "0.43"}, "BTC-USD": {"Ganho pra acionamento": "0.004771982890003024", "Gap de desconto": "0.995228017109997", "Acertos Decisao": "87.7", "Acertos Subida": "67.71", "Varia\u00e7\u00e3o do Papel": "289.1", "Lucro das opera\u00e7\u00f5es": "73.1", "Lucro medio diario": "0.29", "Lucro medio mensal": "5.96", "RMSE": "71408.55"}, "VALE3.SA": {"Ganho pra acionamento": "0.0013468437575603343", "Gap de desconto": "0.9986531562424397", "Acertos Decisao": "83.33", "Acertos Subida": "62.5", "Varia\u00e7\u00e3o do Papel": "84.13", "Lucro das opera\u00e7\u00f5es": "57.69", "Lucro medio diario": "0.23", "Lucro medio mensal": "4.68", "RMSE": "170.9"}}
-        "Gap de desconto": "0.995228017109997",
-        "Acertos Decisao": "87.7",
-        "Acertos Subida": "67.71",
-        "Varia\u00e7\u00e3o do Papel": "289.1",
-        "Lucro das opera\u00e7\u00f5es": "73.1",
-        "Lucro medio diario": "0.29",
-        "Lucro medio mensal": "5.96",
-        "RMSE": "71408.55"
+{
+    "RNDP11.SA": {
+        "Ganho pra acionamento": "0.0",
+        "Gap de desconto": "1.0",
+        "Acertos Decisao": "65.38",
+        "Acertos Subida": "28.0",
+        "Varia\u00e7\u00e3o do Papel": "-4.37",
+        "Lucro das opera\u00e7\u00f5es": "3.13",
+        "Lucro medio diario": "0.06",
+        "Lucro medio mensal": "1.21",
+        "RMSE": "939.77"
     },
-    "VALE3.SA": {
-        "Ganho pra acionamento": "0.0013468437575603343",
-        "Gap de desconto": "0.9986531562424397",
-        "Acertos Decisao": "83.33",
-        "Acertos Subida": "62.5",
-        "Varia\u00e7\u00e3o do Papel": "84.13",
-        "Lucro das opera\u00e7\u00f5es": "57.69",
-        "Lucro medio diario": "0.23",
-        "Lucro medio mensal": "4.68",
-        "RMSE": "170.9"
+    "OIBR3.SA": {
+        "Ganho pra acionamento": "0.005813947847045586",
+        "Gap de desconto": "0.9941860521529544",
+        "Acertos Decisao": "75.0",
+        "Acertos Subida": "48.0",
+        "Varia\u00e7\u00e3o do Papel": "36.42",
+        "Lucro das opera\u00e7\u00f5es": "-4.34",
+        "Lucro medio diario": "-0.08",
+        "Lucro medio mensal": "-1.66",
+        "RMSE": "7.62"
+    },
+    "VILG11.SA": {
+        "Ganho pra acionamento": "-0.00016093541407724565",
+        "Gap de desconto": "1.0001609354140772",
+        "Acertos Decisao": "71.15",
+        "Acertos Subida": "46.43",
+        "Varia\u00e7\u00e3o do Papel": "-4.82",
+        "Lucro das opera\u00e7\u00f5es": "-0.48",
+        "Lucro medio diario": "-0.01",
+        "Lucro medio mensal": "-0.18",
+        "RMSE": "78.16"
+    },
+    "PETR4.SA": {
+        "Ganho pra acionamento": "0.007661473658896023",
+        "Gap de desconto": "0.992338526341104",
+        "Acertos Decisao": "90.38",
+        "Acertos Subida": "64.29",
+        "Varia\u00e7\u00e3o do Papel": "40.62",
+        "Lucro das opera\u00e7\u00f5es": "10.51",
+        "Lucro medio diario": "0.2",
+        "Lucro medio mensal": "4.12",
+        "RMSE": "69.74"
+    },
+    "EUR=X": {
+        "Ganho pra acionamento": "-0.0004446162404264653",
+        "Gap de desconto": "1.0004446162404266",
+        "Acertos Decisao": "61.54",
+        "Acertos Subida": "37.5",
+        "Varia\u00e7\u00e3o do Papel": "-2.45",
+        "Lucro das opera\u00e7\u00f5es": "1.11",
+        "Lucro medio diario": "0.02",
+        "Lucro medio mensal": "0.43",
+        "RMSE": "0.31"
+    },
+    "BTC-USD": {
+        "Ganho pra acionamento": "0.012723580680175761",
+        "Gap de desconto": "0.9872764193198242",
+        "Acertos Decisao": "86.54",
+        "Acertos Subida": "56.25",
+        "Varia\u00e7\u00e3o do Papel": "98.43",
+        "Lucro das opera\u00e7\u00f5es": "10.83",
+        "Lucro medio diario": "0.21",
+        "Lucro medio mensal": "4.25",
+        "RMSE": "128487.98"
+    },
+    "IAU": {
+        "Ganho pra acionamento": "-0.0005608653350883674",
+        "Gap de desconto": "1.0005608653350884",
+        "Acertos Decisao": "73.08",
+        "Acertos Subida": "46.15",
+        "Varia\u00e7\u00e3o do Papel": "-4.09",
+        "Lucro das opera\u00e7\u00f5es": "0.1",
+        "Lucro medio diario": "0.0",
+        "Lucro medio mensal": "0.04",
+        "RMSE": "21.5"
     }
 }
