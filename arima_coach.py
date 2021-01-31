@@ -121,9 +121,9 @@ def do_arima_forecast(ticker):
 
 # In[5]:
 
-ticker = "PETR3.SA"
-df = get_finance_data(ticker)
-df = df.dropna()['Close']    
+#ticker = "PETR3.SA"
+#df = get_finance_data(ticker)
+#df = df.dropna()['Close']    
 def predict_values(df, ticker): 
     # split into train and test sets
     X = df.values
@@ -250,14 +250,12 @@ def run_statistics(tickers):
     json.dump(jdata, open('dataframes/^^resumo.json','w'), indent=4)
 
 # In[8]:
+if __name__ == '__main__':
 
-#JPYEUR=X com provavel erro nos dados do YFinance
-tickers = ["RNDP11.SA","OIBR3.SA","VILG11.SA", "PETR4.SA", "EUR=X", "BTC-USD","IAU" ]
-         # "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
-run_arima_coach(tickers, days_force_update=10)
-run_statistics(tickers)
+    #JPYEUR=X com provavel erro nos dados do YFinance
+    tickers = ["ITUB4.SA" ]
+             # "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
+    run_arima_coach(tickers, days_force_update=10)
+    run_statistics(tickers)
 
-# In[]:
-with open('dataframes/^^resumo.json','r') as jfile:
-    jdata = json.load(jfile)
-json.dump(jdata, open('dataframes/^^resumo.json', 'w'),  indent=4)
+

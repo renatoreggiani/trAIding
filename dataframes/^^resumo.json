@@ -75,5 +75,16 @@
         "Lucro medio diario": "0.0",
         "Lucro medio mensal": "0.04",
         "RMSE": "21.5"
+    },
+    "ITUB4.SA": {
+        "Ganho pra acionamento": "-0.001259872215025215",
+        "Gap de desconto": "1.0012598722150252",
+        "Acertos Decisao": "67.31",
+        "Acertos Subida": "39.29",
+        "Varia\u00e7\u00e3o do Papel": "2.25",
+        "Lucro das opera\u00e7\u00f5es": "-8.13",
+        "Lucro medio diario": "-0.16",
+        "Lucro medio mensal": "-3.08",
+        "RMSE": "59.48"
     }
 }

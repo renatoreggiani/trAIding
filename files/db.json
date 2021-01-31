@@ -118,5 +118,20 @@
             ],
             "train_date": "2021-01-20"
         }
+    },
+    "ITUB4.SA": {
+        "yticker": "ITUB4.SA",
+        "ARIMA": {
+            "parametros": [
+                4,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0
+            ],
+            "train_date": "2021-01-30"
+        }
     }
 }
