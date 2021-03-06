@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+
+
+#os.stat('C:/Users/f8564619/Documents/GitHub/trAIding/backtest.ipynb')[8]  usa datetime p converter
+
+
+
 # In[1]:
     
 # import yfinance as yf
@@ -124,21 +130,21 @@ def do_arima_forecast(ticker):
 #ticker = "PETR3.SA"
 #df = get_finance_data(ticker)
 #df = df.dropna()['Close']    
-def predict_values(df, ticker): 
+def predict_values(df, ticker, modelo=''): 
     # split into train and test sets
     X = df.values
     train, test = X[0:-52], X[-52:]
     history = train.tolist()
     predictions = []
     #get arima params
-    arima_order = get_arima_data(ticker)
-    print("modelo lido: ("+str(arima_order[0])+","+str(arima_order[1])+","+str(arima_order[2])+")")
+    arima_order = get_arima_data(ticker) #remover
+    print("modelo lido: ("+str(arima_order[0])+","+str(arima_order[1])+","+str(arima_order[2])+")") #remover
     print("rodando backtest")
 
     # walk-forward validation
     try:
         for t in range(len(test)):
-        	model = ARIMA(history, order=(arima_order[0],arima_order[1],arima_order[2]))
+        	model = ARIMA(history, order=(arima_order[0],arima_order[1],arima_order[2])) #alterar pelo pickle
         	model_fit = model.fit(disp=0)
         	output = model_fit.forecast()
         	yhat = output[0][0]
@@ -253,7 +259,7 @@ def run_statistics(tickers):
 if __name__ == '__main__':
 
     #JPYEUR=X com provavel erro nos dados do YFinance
-    tickers = ["ITUB4.SA" ]
+    tickers = ["ITUB4.SA", "VALE3.SA" ]
              # "VALE3.SA", "BBAS3.SA", "ITUB3.SA","AAPL","GOOG","TSLA","^DJI","^GSPC","GC=F","CL=F","BZ=F"]
     run_arima_coach(tickers, days_force_update=10)
     run_statistics(tickers)
