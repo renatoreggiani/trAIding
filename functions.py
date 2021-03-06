@@ -10,9 +10,9 @@ from statsmodels.tsa.arima_model import ARIMA
 from pmdarima.arima import auto_arima
 import numpy as np
 
+# In[
 
-
-def get_finance_data(ticker, period='10y', interval='1d'):
+def get_finance_data(ticker, period='10y', interval='1d', col_y='Close'):
     '''
     Função para capturar os dados dos ativos, acrescentar ".SA" no final do ticker para ativos 
     negociados na Bovespa, exemplo "PETR4.SA".
@@ -27,6 +27,9 @@ def get_finance_data(ticker, period='10y', interval='1d'):
     
     tkr = yf.Ticker(ticker)
     df = tkr.history(period=period, interval=interval)
+    df['y'] = df[col_y]
+    df['ds'] = df.index
+    
     return df
 
 
