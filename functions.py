@@ -35,7 +35,7 @@ def get_finance_data(ticker, period='5y', interval='1d', col_y='Close'):
     df['y'] = df[col_y]
     df['ds'] = df.index
     
-    return df
+    return df.sort_values('ds')
 
 
 def stationary_test(s, alpha=0.05):
