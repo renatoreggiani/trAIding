@@ -76,9 +76,9 @@ class ModeloExemplo(AbstractModelo):
         pass
         
 #%%
-m = ModeloExemplo(df='df', ticker='bbas')
+# m = ModeloExemplo(df='df', ticker='bbas')
 
-print(m.nome_modelo)
+# print(m.nome_modelo)
 
-m.nome_modelo
+# m.nome_modelo
 
