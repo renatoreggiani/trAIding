@@ -10,8 +10,8 @@ import numpy as np
 
 class AbstractModelo(ABC):
     
-    def __inti__(self, ativo):
-        self.__nome_modelo = ativo
+    def __inti__(self, ticker):
+        self.__nome_modelo = ticker
     
     @property
     @abstractmethod
@@ -27,7 +27,11 @@ class AbstractModelo(ABC):
         pass
 
     @abstractmethod
-    def predict(self) -> np.array:
+    def forecast(self)-> float:
+        pass
+    
+    @abstractmethod
+    def carrega_modelo(self):
         pass
 
     @abstractmethod
@@ -42,14 +46,15 @@ class AbstractModelo(ABC):
 #%%
 class ModeloExemplo(AbstractModelo):
     
-    def __init__(self, df, ativo):
+    def __init__(self, df,  ticker):
         self.modelo = 'modelo'
-        self.ativo = ativo
-        self.__nome_modelo = self.ativo
+        self.ticker = ticker
+        self.__nome_modelo = self.ticker
+        self.df = df
     
     @property
     def nome_modelo(self):
-        return f'modelo_{self.__nome_modelo}'
+        return f'ARIMA_{self.__nome_modelo}'
     
     def ajusta_dados(self):
         pass 
@@ -58,17 +63,22 @@ class ModeloExemplo(AbstractModelo):
         pass
 
     def salva_modelo(self):
+        # 
         print('salvando')
         
-    def predict(self):
+    def forecast(self) -> float:
         pass
 
-    
     def atualiza_modelo(self):
+        pass
+    
+    def carrega_modelo(self):
         pass
         
 #%%
-m = ModeloExemplo('df', 'bbas')
+m = ModeloExemplo(df='df', ticker='bbas')
 
 print(m.nome_modelo)
+
+m.nome_modelo
 
