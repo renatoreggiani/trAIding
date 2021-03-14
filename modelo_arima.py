@@ -20,7 +20,7 @@ from functions import stationary_test
 import warnings
 warnings.filterwarnings('ignore')
 
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 plt.style.use('fivethirtyeight')
 
 # In[]:
