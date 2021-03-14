@@ -21,7 +21,6 @@ from collections import deque
 
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from functions import get_finance_data
