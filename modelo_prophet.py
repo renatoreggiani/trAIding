@@ -38,8 +38,8 @@ class ModeloProphet(AbstractModelo):
         self.df_prophet = self.ajusta_dados()
         # self.model = self.fit()
 
-        self.fit()
-        self.forecast = self.forecast()
+        # self.fit()
+        # self.forecast = self.forecast()
 
     @property
     def nome_modelo(self) -> str:
