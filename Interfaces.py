@@ -6,7 +6,7 @@ Created on Tue Mar  9 20:31:46 2021
 """
 from __future__ import annotations
 from abc import ABC, abstractmethod
-import numpy as np
+#import numpy as np
 
 class AbstractModelo(ABC):
     
@@ -43,7 +43,7 @@ class AbstractModelo(ABC):
         pass
     
     
-#%%
+'''''
 class ModeloExemplo(AbstractModelo):
     
     def __init__(self, df,  ticker):
@@ -75,10 +75,5 @@ class ModeloExemplo(AbstractModelo):
     def carrega_modelo(self):
         pass
         
-#%%
-# m = ModeloExemplo(df='df', ticker='bbas')
-
-# print(m.nome_modelo)
-
-# m.nome_modelo
+'''
 

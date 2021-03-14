@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# modelos = ['modelo_arima', 'modelo_lstm',  ]
-# tickers = ['babs']
-
 '''
 # atualiza tudo
 for model in modelos:
@@ -27,32 +22,23 @@ m.predict
 
 # In[8]:
 
-
 import interfaces
-import pandas as pd
-import numpy as np
 import os
 import pickle
 import json
 import datetime
 
-from sklearn.metrics import mean_squared_error
-from math import sqrt
-from statsmodels.tsa.arima_model import ARIMA
 from pmdarima.arima import auto_arima
 from functions import stationary_test
 
 import warnings
 warnings.filterwarnings('ignore')
 
-import matplotlib.pyplot as plt 
-plt.style.use('fivethirtyeight')
-
 # In[]:
     
 class modelo_arima(AbstractModelo):
     
-    def __init__(self, df,  ticker, DaysForUpdate=0):
+    def __init__(self, df,  ticker, days_force_update=0):
         self.ticker = ticker
         self.__nome_modelo = self.ticker
         self.df = df
@@ -71,9 +57,10 @@ class modelo_arima(AbstractModelo):
 
     def fit(self)->None:
         is_stat = stationary_test(self.df)
-        self.modelo = auto_arima(self.df, stationary=is_stat, start_p=0, start_d=0, start_q=0, max_p=10, max_d=10, max_q=10, 
+        arima_model = auto_arima(self.df, stationary=is_stat, start_p=0, start_d=0, start_q=0, max_p=10, max_d=10, max_q=10, 
                              start_P=0, start_D=0, start_Q=0, max_P=15, max_D=15, max_Q=15, m=15, seasonal='False', n_fits=50,
                              error_action='warn', trace=True, suppress_warnings=True, stepwise=False, random_state=20, n_jobs=-1)
+        self.modelo = arima_model.fit(disp=0)
 
     def salva_modelo(self):
         try:
@@ -83,14 +70,16 @@ class modelo_arima(AbstractModelo):
             jdata = {}
         hoje = datetime.datetime.now().strftime("%Y-%m-%d")
         jdata[self.ticker].update({"parametros":self.modelo.order + self.modelo.seasonal_order,"train_date":hoje})
-        json.dump(jdata, open('modelos/arima.json','w'), indent=4)
-        pickle.dump(self.modelo, open("modelos/arima/"+self.ticker,"wb"))
+        json.dump(jdata, open('modelos/arima/arima.json','w'), indent=4)
+        pickle.dump(self.modelo, open("modelos/arima/arima."+self.ticker+".bin","wb"))
 
     def forecast(self)->float:
-        pass
+        self.modelo.forecast()[0]
 
     def atualiza_modelo(self):
-        pass
+        train_date = datetime.datetime.strptime(os.path.getmtime("modelos/arima/arima."+self.ticker+".bin"))
+        if ((datetime.datetime.now() - train_date).days) > self.days_force_update:
+            self.fit()
     
     def carrega_modelo(self):
-        pass
+        self.modelo = pickle.load(open("modelos/arima/arima."+self.ticker+".bin",'rb'))
