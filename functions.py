@@ -8,7 +8,6 @@ Created on Wed Mar 10 21:13:46 2021
 
 # In[8]:
 
-
 import yfinance as yf
 from pmdarima.arima import ADFTest, CHTest, KPSSTest, PPTest
 from statsmodels.tsa.arima_model import ARIMA
