@@ -26,14 +26,11 @@ class ModeloProphet(AbstractModelo):
     precisa receber um dataframe com colunas 'y' e 'ds'
     """
 
-    def __init__(self, df, ticker, periods=60):
-        self.model = Prophet(growth='linear', daily_seasonality=False,
-                             yearly_seasonality='auto', n_changepoints=140,
-                             weekly_seasonality='auto', seasonality_mode='additive',
-                             seasonality_prior_scale=100)
+    def __init__(self, df, ticker, periods=1):
+        self.model = None
         self.ticker = ticker
         self.__nome_modelo = self.nome_modelo
-        self.df_in = df.copy()
+        self.df = df.copy()
         self.periods = periods
         self.df_prophet = self.ajusta_dados()
         # self.model = self.fit()
@@ -46,23 +43,30 @@ class ModeloProphet(AbstractModelo):
         return f'modelo_prophet_{self.ticker}'
 
     def ajusta_dados(self):
-        df_prophet = self.df_in.copy()
-        df_prophet = df_prophet[['ds', 'y']].sort_values('ds')
-        return df_prophet.dropna()
+        # df_prophet = self.df.copy()
+        # df_prophet = df_prophet[['ds', 'y']].sort_values('ds')
+        return self.df.dropna()
 
     def fit(self):
+        self.model = Prophet(growth='linear', daily_seasonality=False,
+                             yearly_seasonality='auto', n_changepoints=140,
+                             weekly_seasonality='auto', seasonality_mode='multiplicative',
+                             seasonality_prior_scale=100)
         self.model.fit(self.df_prophet)
 
-    def forecast(self):
-        future = self.model.make_future_dataframe(periods=self.periods, freq='B')
-        return self.model.predict(future)
+    def forecast(self, periods=1, plot=False):
+        self.future = self.model.make_future_dataframe(periods=periods, freq='B')
+        if plot:
+            return self.model.predict(self.future)
+        else:
+            return self.model.predict(self.future)['yhat'].values[-1]
 
     def plot(self):
-        fig = plot_plotly(self.model, self.forecast)
+        fig = plot_plotly(self.model, self.forecast(periods=90, plot=True))
         py.plot(fig)
 
     def plot_sazonalidade(self):
-        self.model.plot_components(self.forecast)
+        self.model.plot_components(self.forecast(periods=90, plot=True))
 
     def carrega_modelo(self):
         pass
@@ -74,13 +78,13 @@ class ModeloProphet(AbstractModelo):
         pass
 
 
-# %%
+# %% teste
 ticker = 'ITUB4.SA'
-df = get_finance_data(ticker)
+df = get_finance_data(ticker, period='1y')
 # df.y = df.y.pct_change()
 m = ModeloProphet(df, ticker)
-# m.fit()
+m.fit()
 m.plot()
-
-ModeloProphet?
+m.plot_sazonalidade()
+m.forecast()
 
