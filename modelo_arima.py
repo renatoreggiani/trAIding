@@ -27,11 +27,11 @@ m.predict
 import os
 import pickle
 import json
-import datetime
 
 from interfaces import AbstractModelo
 from pmdarima.arima import auto_arima
 from functions import stationary_test
+from datetime import datetime
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -46,6 +46,7 @@ class modelo_arima(AbstractModelo):
         self.__nome_modelo = self.ticker
         self.df = df
         self.modelo = None
+        self.days_force_update = days_force_update
 
     @property
     def nome_modelo(self):
@@ -82,21 +83,21 @@ class modelo_arima(AbstractModelo):
         pickle.dump(self.modelo, open("modelos/arima/arima_"+self.ticker, "wb"))
 
     def forecast(self) -> float:
-        self.modelo.predict(n_periods=1, alpha=0.05)[0]
+        return self.modelo.predict(n_periods=1, alpha=0.05)[0]
 
     def atualiza_modelo(self):
-        train_date = datetime.datetime.strptime(os.path.getmtime("modelos/arima/arima." +
-                                                                 self.ticker+".bin"))
-        if ((datetime.datetime.now() - train_date).days) > self.days_force_update:
+        train_date = datetime.fromtimestamp(os.path.getmtime("modelos/arima/arima_" + self.ticker))
+        if ((datetime.now() - train_date).days) > self.days_force_update:
             self.fit()
 
     def carrega_modelo(self):
-        self.modelo = pickle.load(open("modelos/arima/arima."+self.ticker+".bin", 'rb'))
+        self.modelo = pickle.load(open("modelos/arima/arima_"+self.ticker, 'rb'))
 
 
 # In[]
-
+'''
 import yfinance as yf
+
 ticker = 'BBAS3.SA'
 tkr = yf.Ticker(ticker)
 df = tkr.history(period='1y', interval='1d')
@@ -104,6 +105,9 @@ df = df.rename(columns={'Close': 'y'}, inplace=False)
 
 m = modelo_arima(df, ticker)
 m.ajusta_dados()
+m.carrega_modelo()
 m.fit()
 m.salva_modelo()
 f = m.forecast()
+m.atualiza_modelo()
+'''
