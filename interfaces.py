@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 
 class AbstractModelo(ABC):
 
-    def __inti__(self, ticker, days_for_update):
+    def __inti__(self, ticker):
         self.__nome_modelo
 
     @property
@@ -39,7 +39,7 @@ class AbstractModelo(ABC):
         pass
 
     @abstractmethod
-    def atualiza_modelo(self):
+    def atualiza_modelo(self, days_for_update):
         pass
 
 
