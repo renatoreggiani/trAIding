@@ -12,9 +12,12 @@ from fbprophet import Prophet
 from fbprophet.plot import plot_plotly
 import plotly.offline as py
 
+import pickle
+from datetime import datetime
+import os
+
+
 from interfaces import AbstractModelo
-
-
 from functions import get_finance_data
 
 # %%
@@ -30,12 +33,11 @@ class ModeloProphet(AbstractModelo):
         self.modelo = None
         self.ticker = ticker
         self.__nome_modelo = self.nome_modelo
+        self.__binfilename = 'modelos/PROPHET_' + self.ticker + '.bin'
         self.df = df.copy()
         self.periods = periods
         self.df_prophet = self.ajusta_dados()
-        # self.model = self.fit()
 
-        # self.fit()
         # self.forecast = self.forecast()
 
     @property
@@ -61,21 +63,36 @@ class ModeloProphet(AbstractModelo):
         else:
             return self.modelo.predict(self.future)['yhat'].values[-1]
 
+    def salva_modelo(self):
+        pickle.dump(self.modelo, open(self.__binfilename, "wb"))
+
+    def atualiza_modelo(self, days_for_update=0):
+        try:
+            train_date = datetime.fromtimestamp(os.path.getmtime(self.__binfilename))
+            if ((datetime.now() - train_date).days) > days_for_update:
+                # mensageria.msg_model_out_of_date(self.nome_modelo, self.ticker, train_date)
+                self.fit()
+                self.salva_modelo()
+            # else:
+                # mensageria.msg_model_up_to_date(self.nome_modelo, self.ticker, train_date)
+        except FileNotFoundError:
+            # mensageria.msg_file_not_found(self.__binfilename)
+            self.fit()
+            self.salva_modelo()
+
+    def carrega_modelo(self):
+        try:
+            self.modelo = pickle.load(open(self.__binfilename, 'rb'))
+            # mensageria.msg_loading_model(self.nome_modelo, self.ticker, self.__binfilename)
+        except FileNotFoundError as e:
+            print(e)
+
     def plot(self):
         fig = plot_plotly(self.modelo, self.forecast(periods=90, plot=True))
         py.plot(fig)
 
     def plot_sazonalidade(self):
         self.modelo.plot_components(self.forecast(periods=90, plot=True))
-
-    def carrega_modelo(self):
-        pass
-
-    def salva_modelo(self):
-        pass
-
-    def atualiza_modelo(self):
-        pass
 
 
 # %% teste

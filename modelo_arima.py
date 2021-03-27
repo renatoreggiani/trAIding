@@ -24,7 +24,7 @@ import mensageria
 
 from interfaces import AbstractModelo
 from pmdarima.arima import auto_arima
-from functions import stationary_test
+from functions import stationary_test, get_finance_data
 from datetime import datetime
 
 import warnings
@@ -38,7 +38,7 @@ class modelo_arima(AbstractModelo):
     def __init__(self, df,  ticker):
         self.ticker = ticker
         self.__nome_modelo = 'ARIMA'
-        self.__binfilename = 'modelos/arima_' + self.ticker + '.bin'
+        self.__binfilename = 'modelos/ARIMA_' + self.ticker + '.bin'
         self.df = df
         self.modelo = None
         self.ajusta_dados()
@@ -48,8 +48,9 @@ class modelo_arima(AbstractModelo):
         return 'ARIMA'
 
     def ajusta_dados(self):
-        # exclui todas as colunas exceto data e y
+        'Exclui todas as colunas exceto "ds" e "y"'
         self.df.dropna(subset=['y'], inplace=True)
+        self.df.sort_values('ds', inplace=True)
         for col in self.df.columns:
             if col not in ['y']:
                 self.df.drop(col, axis='columns', inplace=True)
@@ -66,6 +67,9 @@ class modelo_arima(AbstractModelo):
         # mensageria.msg_fitting_complete(self.nome_modelo, self.ticker)
         self.modelo.fit(y=self.df['y'])
 
+    def forecast(self) -> float:
+        return self.modelo.predict(n_periods=1, alpha=0.05)[0]
+
     def salva_modelo(self):
         try:
             with open('modelos/arima.json', 'r') as jfile:
@@ -81,20 +85,19 @@ class modelo_arima(AbstractModelo):
         mensageria.msg_saving_model(self.nome_modelo, self.ticker, self.__binfilename)
         pickle.dump(self.modelo, open(self.__binfilename, "wb"))
 
-    def forecast(self) -> float:
-        return self.modelo.predict(n_periods=1, alpha=0.05)[0]
-
     def atualiza_modelo(self, days_for_update=0):
         try:
             train_date = datetime.fromtimestamp(os.path.getmtime(self.__binfilename))
             if ((datetime.now() - train_date).days) > days_for_update:
                 mensageria.msg_model_out_of_date(self.nome_modelo, self.ticker, train_date)
                 self.fit()
+                self.salva_modelo()
             else:
                 mensageria.msg_model_up_to_date(self.nome_modelo, self.ticker, train_date)
         except FileNotFoundError:
             mensageria.msg_file_not_found(self.__binfilename)
             self.fit()
+            self.salva_modelo()
 
     def carrega_modelo(self):
         try:
@@ -106,13 +109,10 @@ class modelo_arima(AbstractModelo):
 
 # In[]
 
-import yfinance as yf
 
 ticker = 'BBAS3.SA'
 mensageria.msg_loading_finance_data(ticker)
-tkr = yf.Ticker(ticker)
-df = tkr.history(period='1y', interval='1d')
-df = df.rename(columns={'Close': 'y'}, inplace=False)
+df = get_finance_data(ticker, period='5y')
 
 m = modelo_arima(df, ticker)
 m.carrega_modelo()
