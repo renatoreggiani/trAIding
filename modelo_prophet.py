@@ -27,7 +27,7 @@ class ModeloProphet(AbstractModelo):
     """
 
     def __init__(self, df, ticker, periods=1):
-        self.model = None
+        self.modelo = None
         self.ticker = ticker
         self.__nome_modelo = self.nome_modelo
         self.df = df.copy()
@@ -48,25 +48,25 @@ class ModeloProphet(AbstractModelo):
         return self.df.dropna()
 
     def fit(self):
-        self.model = Prophet(growth='linear', daily_seasonality=False,
-                             yearly_seasonality='auto', n_changepoints=140,
-                             weekly_seasonality='auto', seasonality_mode='multiplicative',
-                             seasonality_prior_scale=100)
-        self.model.fit(self.df_prophet)
+        self.modelo = Prophet(growth='linear', daily_seasonality=False,
+                              yearly_seasonality='auto', n_changepoints=140,
+                              weekly_seasonality='auto', seasonality_mode='multiplicative',
+                              seasonality_prior_scale=100)
+        self.modelo.fit(self.df_prophet)
 
     def forecast(self, periods=1, plot=False):
-        self.future = self.model.make_future_dataframe(periods=periods, freq='B')
+        self.future = self.modelo.make_future_dataframe(periods=periods, freq='B')
         if plot:
-            return self.model.predict(self.future)
+            return self.modelo.predict(self.future)
         else:
-            return self.model.predict(self.future)['yhat'].values[-1]
+            return self.modelo.predict(self.future)['yhat'].values[-1]
 
     def plot(self):
-        fig = plot_plotly(self.model, self.forecast(periods=90, plot=True))
+        fig = plot_plotly(self.modelo, self.forecast(periods=90, plot=True))
         py.plot(fig)
 
     def plot_sazonalidade(self):
-        self.model.plot_components(self.forecast(periods=90, plot=True))
+        self.modelo.plot_components(self.forecast(periods=90, plot=True))
 
     def carrega_modelo(self):
         pass
