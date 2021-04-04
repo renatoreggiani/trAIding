@@ -9,7 +9,7 @@ Created on Sat Mar 20 12:28:15 2021
 
 import mensageria
 import modelo_arima
-import yfinance as yf
+from functions import get_finance_data
 
 # In[]
 
@@ -17,20 +17,17 @@ import yfinance as yf
 def back_test(modelo, ticker):
     # ticker = 'BBAS3.SA'
     mensageria.msg_loading_finance_data(ticker)
-    tkr = yf.Ticker(ticker)
-    df = tkr.history(period='1y', interval='1d')
-    df = df.rename(columns={'Close': 'y'}, inplace=False)
-    history, test = df[0:-52], df[-52:]
-    # history = train.tolist()
+    df = get_finance_data(ticker)
+    train, test = df[0:-52], df[-52:]
     predictions = []
 
     for t in range(len(test)):
-        m = modelo_arima.modelo_arima(history, ticker, days_for_update=7)
+        m = modelo_arima.modelo_arima(train, ticker, days_for_update=7)
         m.fit()
         yhat = m.forecast()
         predictions.append(yhat)
         obs = test[t]
-        history.append(obs)
+        train.append(obs)
         int('predicted=%f, observed=%f' % (yhat, obs))
 
 

@@ -19,13 +19,13 @@ m.predict
 
 import os
 import pickle
-import json
+# import json
 import mensageria
 
 from interfaces import AbstractModelo
-from pmdarima.arima import auto_arima
-from functions import stationary_test
+from darts.models import ExponentialSmoothing
 from datetime import datetime
+from darts import TimeSeries
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -33,55 +33,36 @@ warnings.filterwarnings('ignore')
 # In[]:
 
 
-class modelo_arima(AbstractModelo):
+class modelo_smoothing(AbstractModelo):
 
     def __init__(self, df,  ticker):
         self.ticker = ticker
-        self.__nome_modelo = 'ARIMA'
-        self.__binfilename = 'modelos/ARIMA_' + self.ticker + '.bin'
+        self.__nome_modelo = 'ExponentialSmoothing'
+        self.__binfilename = 'modelos/ExpSoothing_' + self.ticker + '.bin'
         self.df = df
         self.modelo = None
         self.ajusta_dados()
 
     @property
     def nome_modelo(self):
-        return 'ARIMA'
+        return 'ExponentialSmoothing'
 
     def ajusta_dados(self):
-        'Exclui todas as colunas exceto "ds" e "y"'
-        self.df.dropna(subset=['y'], inplace=True)
-        self.df.sort_values('ds', inplace=True)
-        for col in self.df.columns:
-            if col not in ['y']:
-                self.df.drop(col, axis='columns', inplace=True)
+        self.df = TimeSeries.from_dataframe(self.df, None, 'y', 'B', fill_missing_dates=False)
 
     def fit(self) -> None:
         mensageria.msg_starting_fitting(self.nome_modelo, self.ticker)
-        is_stat = stationary_test(self.df['y'])
-        self.modelo = auto_arima(self.df['y'], stationary=is_stat, start_p=0, start_d=0, start_q=0,
-                                 max_p=10, max_d=10, max_q=10, start_P=0, start_D=0, start_Q=0,
-                                 max_P=15, max_D=15, max_Q=15, m=15, seasonal='False', n_fits=50,
-                                 error_action='warn', trace=True, suppress_warnings=True,
-                                 stepwise=False, random_state=20, n_jobs=-1)
-        print('\n')
-        # mensageria.msg_fitting_complete(self.nome_modelo, self.ticker)
-        self.modelo.fit(y=self.df['y'])
+        # is_stat = stationary_test(self.df['y']) || devemos fazer teste de estacionaridade?
+        self.modelo = ExponentialSmoothing()
+        mensageria.msg_fitting_complete(self.nome_modelo, self.ticker)
+        self.modelo.fit(self.df['y'])
 
     def forecast(self) -> float:
-        return self.modelo.predict(n_periods=1, alpha=0.05)[0]
+        return self.modelo.predict(1)._df
+
+# com o novo interface proposto, dá pra apagar todas essas funções abaixo
 
     def salva_modelo(self):
-        try:
-            with open('modelos/'+self.__nome_modelo+'.json', 'r') as jfile:
-                jdata = json.load(jfile)
-        except FileNotFoundError:
-            jdata = {}
-        hoje = datetime.now().strftime("%Y-%m-%d")
-        if self.ticker not in jdata:
-            jdata[self.ticker] = {}
-        jdata[self.ticker]['parametros'] = self.modelo.order + self.modelo.order # aqui é o sazonal
-        jdata[self.ticker]['train_date'] = hoje
-        json.dump(jdata, open('modelos/'+self.__nome_modelo+'.json', 'w'), indent=4)
         mensageria.msg_saving_model(self.nome_modelo, self.ticker, self.__binfilename)
         pickle.dump(self.modelo, open(self.__binfilename, "wb"))
 
@@ -109,15 +90,18 @@ class modelo_arima(AbstractModelo):
 
 # In[]
 
-'''
+from functions import get_finance_data
+
+# In[]
+
 ticker = 'BBAS3.SA'
 mensageria.msg_loading_finance_data(ticker)
 df = get_finance_data(ticker, period='5y')
 
-m = modelo_arima(df, ticker)
-m.carrega_modelo()
-m.atualiza_modelo(days_for_update=0)
+m = modelo_smoothing(df, ticker)
+m.fit()
+# m.carrega_modelo()
+# m.atualiza_modelo(days_for_update=0)
 m.salva_modelo()
 f = m.forecast()
 x = m.modelo.get_params()
-'''

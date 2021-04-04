@@ -6,27 +6,33 @@ Created on Fri Apr  2 11:57:53 2021
 """
 # In[]
 
-import yfinance as yf
-import pandas as pd
 from darts.models import ExponentialSmoothing
-from darts import TimeSeries
+from functions import get_finance_data
 import matplotlib.pyplot as plt
+from darts import TimeSeries
 
 
 # In[]
 
 ticker = 'BBAS3.SA'
-tkr = yf.Ticker(ticker)
-df = tkr.history(period='5y', interval='1d')
-df = df.rename(columns={'Close': 'y'}, inplace=False)
-series = TimeSeries.from_dataframe(df, time_col=None, value_cols='y', freq='D')
-train, val = series.split_after(pd.Timestamp('2020-05-02'))
 
-model = ExponentialSmoothing()
-model.fit(train)
-prediction = model.predict(len(val))
+df = get_finance_data(ticker)
+train, test = df[0:-52], df[-52:]
+predictions = []
 
-series.plot(label='actual')
-prediction.plot(label='forecast')
+series = TimeSeries.from_dataframe(df, time_col=None, value_cols='y', freq='B', fill_missing_dates=True)
+
+for t in range(len(test)):
+    m = ExponentialSmoothing()
+    m.fit(train['y'])
+    yhat = m.predict(1)[0]
+    predictions.append(yhat)
+    obs = test[t]
+    train.append(obs)
+    int('predicted=%f, observed=%f' % (yhat, obs))
+
+
+df['y'].plot(label='actual')
+predictions.plot(label='forecast')
 plt.legend()
 plt.xlabel('Date')
