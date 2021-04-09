@@ -17,10 +17,12 @@ from darts import TimeSeries
 ticker = 'BBAS3.SA'
 
 df = get_finance_data(ticker)
+# df.index.freq = 'C'
+df = df.reset_index()[['Close']]
 train, test = df[0:-52], df[-52:]
 predictions = []
 
-series = TimeSeries.from_dataframe(df, time_col=None, value_cols='y', freq='B', fill_missing_dates=True)
+series = TimeSeries.from_dataframe(df, value_cols='Close', fill_missing_dates=False)
 
 for t in range(len(test)):
     m = ExponentialSmoothing()
